@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Раскопки — MVP V3</title>
+<title>Раскопки — MVP V4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -98,12 +98,17 @@ body{
 .half{flex-grow:1;height:52px;font-size:23px;letter-spacing:2px;line-height:1}
 
 #slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.slot{border:1px solid var(--line-dim);background:var(--panel);padding:8px 6px;min-height:104px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
+/* Витрина — два ряда по три, карточка низкая: освободившаяся высота уходит
+   очереди покупателей, которая без таймера висит целиком. Метка ручной чистки
+   стала точкой в углу — строку она больше не занимает. */
+.slot{position:relative;border:1px solid var(--line-dim);background:var(--panel);padding:5px 4px;
+  min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;text-align:center}
 .slot.full{border-color:var(--line)}
-.slot .sn{font-size:16px;line-height:1.05;color:var(--ink-hi)}
-.slot .sq{font-size:16px;line-height:1}
-.slot .empty{font-size:15px;line-height:1.1;color:var(--ink-dim)}
+.slot .sn{font-size:15px;line-height:1;color:var(--ink-hi)}
+.slot .sq{font-size:15px;line-height:1}
+.slot .empty{font-size:14px;line-height:1.05;color:var(--ink-dim)}
+.slot .dot{position:absolute;top:3px;right:5px;font-size:14px;line-height:1;color:var(--hud)}
 .sh{font-size:14px;line-height:1;color:var(--ink-off);letter-spacing:1px}
 .sh.by{color:var(--hud)}
 
@@ -136,6 +141,20 @@ body{
 .onote{font-size:16px;line-height:1.25;color:var(--ink-dim)}
 .offer .half{height:46px;font-size:20px}
 
+#mapTabs{display:flex;gap:4px;margin-bottom:8px}
+.mtab{position:relative;flex:1 1 auto;min-width:fit-content;height:38px;padding:0 8px;
+  border:1px solid var(--line-dim);background:var(--panel);color:var(--ink-off);font:inherit;
+  font-size:17px;white-space:nowrap;display:flex;align-items:center;justify-content:center}
+.mtab.on{border-color:var(--hud);color:var(--hud);background:#191b14}
+.mtab.new{padding-right:15px}
+.mtab.new::after{content:"•";position:absolute;top:1px;right:4px;font-size:16px;line-height:1;color:var(--gold)}
+.rep{border:1px solid var(--line-dim);background:var(--panel);padding:9px;
+  display:flex;flex-direction:column;gap:6px}
+.rep .rh{display:flex;justify-content:space-between;font-size:19px;color:var(--ink-hi)}
+.rep .rh b{font-weight:normal;color:var(--hud)}
+.pips{display:flex;gap:3px;margin-top:4px}
+.pip{width:15px;height:8px;border:1px solid var(--line-dim)}
+.pip.on{background:var(--hud);border-color:var(--hud)}
 #mapList{flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:10px}
 .loc{border:1px solid var(--line-dim);background:var(--panel);padding:10px;display:flex;gap:10px;align-items:center}
 .loc.here{border-color:var(--hud)}
@@ -148,6 +167,7 @@ body{
 .bar > i{display:block;height:100%;background:var(--gold);width:0}
 .hire{display:flex;gap:8px;margin-top:8px}
 .hire button{flex-grow:1;height:46px;font-size:18px;line-height:1.1}
+#mapFoot{flex:0 0 auto;padding-top:8px}
 #reset{width:100%;height:44px;margin-top:4px;font-size:17px;letter-spacing:1px;
   color:var(--ink-dim);border-color:var(--line-dim)}
 #reset.arm{color:var(--warn);border-color:var(--warn)}
@@ -244,6 +264,23 @@ body{
 
 .siw{flex:0 0 auto;display:flex;flex-direction:column;gap:4px}
 .siw .si{width:74px}
+#away{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+  background:rgba(8,6,4,.86);padding:20px}
+#away.on{display:flex}
+.awBox{width:100%;max-width:320px;border:1px solid var(--line);background:var(--panel);
+  padding:12px;display:flex;flex-direction:column;gap:10px}
+.awH{font-size:23px;letter-spacing:2px;color:var(--hud)}
+#awList{display:flex;flex-direction:column;gap:4px}
+.awRow{display:flex;justify-content:space-between;gap:8px;font-size:18px;color:var(--ink-dim)}
+.awRow b{font-weight:normal;color:var(--ink-hi)}
+.parts{display:flex;flex-direction:column;gap:3px}
+.prow{display:flex;justify-content:space-between;gap:8px;font-size:17px;line-height:1.1;color:var(--ink-dim)}
+.prow span:last-child{color:var(--ink-hi)}
+.trash{width:74px;height:26px;font-size:13px;line-height:1;letter-spacing:0;
+  border-color:var(--line-dim);color:var(--ink-off)}
+.trash.arm{border-color:var(--warn);color:var(--warn)}
+.crw{flex:0 0 auto;display:flex;flex-direction:column;gap:3px}
+.crw .trash{width:66px}
 .donate{width:74px;height:30px;font-size:13px;line-height:1;letter-spacing:0;
   padding:0;border-color:var(--hud);color:var(--hud)}
 
@@ -336,7 +373,9 @@ body{
   </div>
 
   <div class="screen" id="scMap">
+    <div id="mapTabs"></div>
     <div id="mapList"></div>
+    <div id="mapFoot"></div>
   </div>
 
   <div class="screen" id="scAlbum">
@@ -371,6 +410,12 @@ body{
       <div id="chint"></div>
     </div>
   </div>
+
+  <div id="away"><div class="awBox">
+    <div class="awH">ПОКА ТЕБЯ НЕ БЫЛО</div>
+    <div id="awList"></div>
+    <button class="btn cta" id="awOk" type="button">ПОНЯТНО</button>
+  </div></div>
 
   <div id="toast"></div>
 </div>
@@ -642,7 +687,58 @@ var BUYERS = [
  {n:"ПЕРЕКУПЩИК", m:0.50, min:0,  face:"#6a5a3a", line:"Вопросов не задаю. Быстро и дёшево."}
 ];
 
-var CRATE_MAX = 3, SHELF_MAX = 3, STORE_MAX = 5, PASSIVE_CAP_MIN = 30;
+var CRATE_MAX = 3, PASSIVE_CAP_MIN = 30;
+
+/* Лавка качается по локациям, в отличие от инструмента: переезд обязан снова
+   поставить стену, и стена по прилавку читается лучше всего — покупателей мало,
+   мест мало, а товар уже дорогой. Купленные уровни не пропадают: они поднимают
+   автономный доход той локации, где куплены. */
+var SHOP = [
+ {k:"sign",  n:"ВЫВЕСКА", max:5, base:120,  g:2.2, d:"Покупатели заходят чаще."},
+ {k:"case",  n:"ВИТРИНА", max:2, base:400,  g:2.6, d:"Мест на прилавке: 3 → 4 → 5."},
+ {k:"store", n:"СКЛАД",   max:3, base:350,  g:2.6, d:"Мест на складе: 5 → 8 → 12 → 16."},
+ {k:"ads",   n:"РЕКЛАМА", max:2, base:900,  g:2.8, d:"Больше людей за раз: 3 → 4 → 5."},
+ {k:"eye",   n:"ОЦЕНЩИК", max:4, base:1500, g:2.4, d:"Реже заходят турист и перекупщик."}
+];
+function shopDef(k){ for(var i = 0; i < SHOP.length; i++) if(SHOP[i].k === k) return SHOP[i]; return null; }
+function shopAt(r){
+ if(!S.shop) S.shop = [];
+ if(!S.shop[r]) S.shop[r] = {sign:0, case:0, store:0, ads:0, eye:0};
+ return S.shop[r];
+}
+function shopLv(k, r){ return shopAt(r === undefined ? S.loc : r)[k] || 0; }
+function shopCost(k){
+ var u = shopDef(k);
+ return Math.round(u.base * Math.pow(u.g, shopLv(k)) / 10) * 10;
+}
+function shopSum(r){
+ var t = 0;
+ for(var i = 0; i < SHOP.length; i++) t += shopLv(SHOP[i].k, r);
+ return t;
+}
+/* Репутация лавки, а не человека: в новом городе тебя не знают. Вечные бонусы
+   на самого игрока — отдельная будущая система, она копится поверх этой. */
+var REP_NAME = ["ПОДОЗРИТЕЛЬНЫЙ", "НЕИЗВЕСТНЫЙ", "ЧЕСТНЫЙ", "УВАЖАЕМЫЙ"];
+function repOf(r){
+ var v = S.rep && S.rep[r === undefined ? S.loc : r];
+ return v === undefined ? 50 : v;
+}
+function repName(v){ return v < 30 ? REP_NAME[0] : (v < 50 ? REP_NAME[1] : (v < 75 ? REP_NAME[2] : REP_NAME[3])); }
+function repMult(){ return 0.85 + 0.003 * repOf(); }
+function addRep(d){
+ if(!S.rep) S.rep = [50, 50, 50];
+ var was = repOf();
+ S.rep[S.loc] = Math.max(0, Math.min(100, was + d));
+ if(repName(S.rep[S.loc]) !== repName(was))
+  toast("РЕПУТАЦИЯ · " + LOC[S.loc].n + "\n" + repName(S.rep[S.loc]));
+}
+function shelfMax(){ return 3 + shopLv("case"); }
+function storeMax(){ return [5, 8, 12, 16][shopLv("store")] || 5; }
+function maxDeals(){ return Math.min(QUEUE_CAP, 3 + shopLv("ads")); }
+function signMul(){ return 1 - 0.12 * shopLv("sign"); }
+/* Наёмник оставляет игроку четверть мест, но не меньше одного: со складом на
+   шестнадцать ячеек старое правило «одно место» превращало склад в свалку. */
+function keepFree(n){ return Math.max(1, Math.round(n / 4)); }
 
 /* Инструмент покупает время и запас хода, но не качество. Сохранность остаётся
    единственным навыком в игре: её нельзя купить, иначе коллекция собирается
@@ -677,16 +773,26 @@ var S = {
  crate:[], store:[], shelf:[], sold:0, tut:0, seen:{}, sound:true, uid:1, t:0,
  goal:[0,0,0], goalOpen:[0,0,0], digLoc:[0,0,0], soldLoc:[0,0,0], perfect:[0,0,0],
  album:[[],[],[]], pity:0, sets:[], uniqGift:0,
- pause:{d:0, c:0, m:0}, clnAll:0, mgrTier:[1,1,0], clnPick:0
+ pause:{d:0, c:0, m:0}, clnAll:0, mgrTier:[1,1,0], clnPick:0,
+ shop:[{sign:0, case:0, store:0, ads:0, eye:0},
+       {sign:0, case:0, store:0, ads:0, eye:0},
+       {sign:0, case:0, store:0, ads:0, eye:0}],
+ rep:[50, 50, 50], mapTab:0, firstAt:{}, born:0, lastIdx:-1, botAt:0
 };
 
 function load(){
  try{
-  var raw = localStorage.getItem("dig.v5");
+  var raw = localStorage.getItem("dig.v6");
   if(raw){ var o = JSON.parse(raw); for(var k in S) if(o[k] !== undefined) S[k] = o[k]; }
  }catch(e){}
 }
-function save(){ try{ S.t = Date.now(); localStorage.setItem("dig.v5", JSON.stringify(S)); }catch(e){} }
+function save(){
+ try{
+  S.t = Date.now();
+  if(!S.born) S.born = Date.now();
+  localStorage.setItem("dig.v6", JSON.stringify(S));
+ }catch(e){}
+}
 load();
 (function(){
  var lists = [S.store, S.shelf, S.crate];
@@ -932,11 +1038,21 @@ function pickTier(){
  for(var t = 0; t < TIERS; t++){ a += w[t]; if(x < a) return t; }
  return 0;
 }
+/* Та же вещь два раза подряд — главный источник ощущения «мне падают одни
+   скарабеи». Вес последней находки режется вчетверо: повтор остаётся возможным,
+   но перестаёт быть обычным делом. Полный запрет не ставим — он бы читался
+   как очередь по кругу. */
+function repeatW(i){ return S.lastIdx === i ? 0.25 : 1; }
 /* Пласт лунки не меняет ярус, он меняет, какая именно вещь яруса выпадет. */
 function pickInTier(from, n){
  var h = curHole(), list = arts(), w = [], sum = 0;
  for(var i = 0; i < n; i++){
-  var k = (h && list[from + i] && list[from + i].m === h.pool) ? 3 : 1;
+  /* Пласт был ×3, и в ярусе из четырёх вещей единственная вещь нужного
+     материала забирала половину выпадений — отсюда «мне падают одни скарабеи».
+     На ×2 пласт остаётся способом влиять на поиск, но перестаёт быть спамом:
+     35% против 21% у остальных. */
+  var k = (h && list[from + i] && list[from + i].m === h.pool) ? 2 : 1;
+  k *= repeatW(from + i);
   w.push(k); sum += k;
  }
  var x = Math.random() * sum, a = 0;
@@ -951,6 +1067,11 @@ function missingUnique(){
  return out;
 }
 function pickIdx(){
+ var out = pickIdxRaw();
+ S.lastIdx = out;
+ return out;
+}
+function pickIdxRaw(){
  var list = ART[S.loc], commonN = Math.min(TIER_N, list.length);
  /* Первая находка в игре жёстко зафиксирована: дешёвый скарабей. Продажа за него
     не должна сразу окупать копателя, иначе игрок проскакивает весь ручной цикл. */
@@ -961,7 +1082,7 @@ function pickIdx(){
   var g = missingUnique();
   if(g.length){ S.uniqGift = 1; S.pity = 0; return g[Math.floor(Math.random() * g.length)]; }
  }
- if(!albumOn()) return Math.floor(Math.random() * commonN);
+ if(!albumOn()) return pickInTier(0, commonN);
  if(S.pity >= PITY){
   var m = missingUnique();
   if(m.length){ S.pity = 0; return m[Math.floor(Math.random() * m.length)]; }
@@ -975,7 +1096,11 @@ function pickIdx(){
 }
 /* Наёмный копатель приносит только рядовые вещи: редкое и уникальное
    достаётся тому, кто копает сам. */
-function botIdx(){ return Math.floor(Math.random() * Math.min(TIER_N, arts().length)); }
+function botIdx(){
+ var i = pickInTier(0, Math.min(TIER_N, arts().length));
+ S.lastIdx = i;
+ return i;
+}
 /* Наёмник разбирает ящик подряд и сам. Дойдя до ценной вещи, он её не портит,
    а откладывает: своими руками он даёт 50–85%, а экспонат для альбома — это 100%.
    Метка «отложено» и есть опознание: на раскопе про находку не известно ничего,
@@ -996,7 +1121,9 @@ function mgrStoreIdx(){
  for(var i = 0; i < S.store.length; i++) if(S.mgrTier[tierOf(S.store[i].i)]) return i;
  return -1;
 }
-function passiveOf(r){ return LOC[r].passive; }
+/* Уровни лавки остаются в своём городе, но не пропадают: они поднимают
+   автономный доход этой локации после переезда. */
+function passiveOf(r){ return LOC[r].passive * (1 + 0.05 * shopSum(r)); }
 function isExhibit(it){ return it.q >= 0.999; }
 function canDonate(it){ return albumOn() && isExhibit(it) && !S.album[it.loc][it.i]; }
 /* Альбом появляется только после туторных шагов про него: до этого на экране
@@ -1290,6 +1417,7 @@ function extractDig(){
  S.crate.push({loc:S.loc, i:arts().indexOf(a), u:newUid()});
  S.digLoc[S.loc]++;
  S.firstFind = 1;
+ mark("dig");
  h.left--;
  if(h.t !== "ad") S.adFinds = (S.adFinds || 0) + 1;
  beep(330, .08, "square", .04); setTimeout(function(){ beep(494, .12, "square", .04); }, 90);
@@ -1307,7 +1435,10 @@ function collapseHole(i){
  else list[i] = makeHole(rollType(), S.loc);
  ensureEasy(S.loc);
  if(S.botHole === i) S.botHole = -1;
- if(S.hole === i){ S.hole = -1; dSite = null; dReady = false; }
+ /* Обвал выбрасывает игрока в меню лунок, а не подсовывает следующую молча:
+    иначе выбор участка исчезает — копаешь дальше и не замечаешь, что лунка
+    кончилась и сменилась. */
+ if(S.hole === i){ S.hole = -1; dSite = null; dReady = false; pickOpen = true; }
  toast("ЛУНКА ОБВАЛИЛАСЬ\nВЫБЕРИ НОВУЮ");
  beep(140, .12, "square", .035);
  holeSig = "";
@@ -1474,11 +1605,12 @@ function brushAt(px, py, speed){
 bindStroke(cPit, 9, function(x, y, sp){ brushAt(x, y, sp); });
 
 function finishClean(){
- if(!cItem || cDone < cTotal || S.store.length >= STORE_MAX) return;
+ if(!cItem || cDone < cTotal || S.store.length >= storeMax()) return;
  var ci = crateIdxOf(cItem.u);
  if(ci >= 0) S.crate.splice(ci, 1); else S.crate.shift();
  S.clnPick = 0;
  S.store.push({loc:cItem.loc, i:cItem.i, q:cQual, u:newUid(), h:1});
+ mark("clean");
  if(cQual >= 0.999){ S.perfect[S.loc]++; S.pity++; }
  var first = cQual >= 0.999 && !S.seen.exh;
  if(cQual >= 0.999) S.seen.exh = 1;
@@ -1493,7 +1625,10 @@ document.getElementById("clnCta").onclick = finishClean;
 /* ---------- фаза 3: лавка ---------- */
 
 var deals = [], dealEnds = 0;
-var DEAL_LIFE = 30000, DEAL_FIRST = 20000, MAX_DEALS = 3;
+/* Покупатели больше не уходят по таймеру: предложение висит, пока игрок не
+   продаст или не откажет. Фаза продажи из реакции становится разбором очереди,
+   поэтому у очереди обязан быть потолок — иначе прилавок забьётся навсегда. */
+var DEAL_FIRST = 20000, QUEUE_CAP = 5;
 var dealAt = Date.now() + DEAL_FIRST;
 function dealWait(){
  if(S.sold === 0) return DEAL_FIRST;
@@ -1501,10 +1636,16 @@ function dealWait(){
  /* Пока на витрине один-два предмета, покупателю всё равно достанется только
     один из них. Ждать полный интервал в этот момент — это просто пустой экран. */
  var free = freeShelf().length;
- return w * (free >= 3 ? 1 : (free === 2 ? 0.75 : 0.5));
+ return w * (free >= 3 ? 1 : (free === 2 ? 0.75 : 0.5)) * signMul();
 }
 function scheduleWave(ms){ dealAt = Date.now() + (ms === undefined ? dealWait() : ms); }
 function newUid(){ return S.uid++; }
+/* Расписание первой сессии проверяется цифрами, а не на глаз: отмечаем время
+   первого раза для каждого ключевого шага. Видно только в консоли. */
+function mark(k){
+ if(!S.firstAt) S.firstAt = {};
+ if(S.firstAt[k] === undefined){ S.firstAt[k] = Math.round((Date.now() - (S.born || Date.now())) / 1000); save(); }
+}
 function shelfOf(u){
  for(var i = 0; i < S.shelf.length; i++) if(S.shelf[i].u === u) return S.shelf[i];
  return null;
@@ -1537,29 +1678,67 @@ function tutDealCheck(){
  /* Денег с этой продажи должно хватить ровно на первый уровень лопаты — следующий
     шаг тутора ведёт в прокачку, — но не на копателя: автоматизацию игрок покупает сам. */
  var it = S.shelf[0], b = BUYERS[1];
+ var tp = priceParts(it, b);
  S.tutBuy = 1;
- deals.push({b:b, u:it.u, sum:Math.max(upCost("dig") + 20, offerFor(it, b)),
-  ends:Date.now() + 36e5, min:false, tut:true});
+ tp.sum = Math.max(upCost("dig") + 20, tp.sum);
+ deals.push({b:b, u:it.u, sum:tp.sum, p:tp, min:false, tut:true});
  beep(494, .07, "square", .035);
  toast("ПОКУПАТЕЛЬ У ВИТРИНЫ\nОН ДОЖДЁТСЯ");
  if(screen === "shop") paintShop();
 }
-function offerFor(it, b){
+/* Цена раскладывается на множители и показывается игроку по строкам: иначе
+   он видит одно число и не понимает, за что ему заплатили. Разбор считается
+   один раз, в момент прихода покупателя, и больше не пересчитывается. */
+function priceParts(it, b){
  var a = ART[it.loc][it.i];
- var sum = a.v * LOC[it.loc].mult * qualMult(it.q) * b.m * (0.9 + Math.random() * 0.2);
- if(hypeOn()) sum *= HYPE_MULT;
- return Math.max(1, Math.round(sum));
+ var p = {base:a.v, loc:LOC[it.loc].mult, qual:qualMult(it.q), buyer:b.m,
+          rep:repMult(), hype:hypeOn() ? HYPE_MULT : 1,
+          luck:0.9 + Math.random() * 0.2};
+ p.sum = Math.max(1, Math.round(p.base * p.loc * p.qual * p.buyer * p.rep * p.hype * p.luck));
+ return p;
+}
+function offerFor(it, b){ return priceParts(it, b).sum; }
+function partRows(d, it){
+ var p = d.p, r = [["БАЗА · " + ART[it.loc][it.i].n, fmt(p.base)],
+  ["ЛОКАЦИЯ", "×" + p.loc.toFixed(2)],
+  ["КАЧЕСТВО " + Math.round(it.q * 100) + "% · " + (it.h ? "ЧИСТИЛ ТЫ" : "НАЁМНИК"), "×" + p.qual.toFixed(2)],
+  ["ПОКУПАТЕЛЬ · " + d.b.n, "×" + p.buyer.toFixed(2)],
+  ["РЕПУТАЦИЯ · " + repName(repOf()), "×" + p.rep.toFixed(2)]];
+ var b0 = bestSet();
+ r.push(["КОЛЛЕКЦИЯ" + (b0 ? " · ОСТАЛОСЬ " + b0.left : ""), "×" + saleMult().toFixed(2)]);
+ if(p.hype > 1) r.push(["АЖИОТАЖ", "×" + p.hype.toFixed(2)]);
+ r.push(["УДАЧА", p.luck >= 1 ? "ПОВЕЗЛО" : "КАК ВЫШЛО"]);
+ return r;
+}
+/* Состав потока двигают два разных рычага. Оценщик покупается за деньги и
+   решает, кто вообще заходит. Репутация зарабатывается решениями и решает,
+   как часто вместо дорогого покупателя приходит перекупщик. */
+function buyerW(){
+ var w = [1, 1, 1, 1], e = shopLv("eye"), r = repOf();
+ var up = 1 + 0.15 * e, dn = Math.pow(0.85, e);
+ w[0] *= dn; w[3] *= dn; w[1] *= up; w[2] *= up;
+ if(r < 30){ w[3] *= 2; w[0] *= 1.5; }
+ else if(r > 70){ w[1] *= 2; w[2] *= 2; }
+ return w;
+}
+function pickBuyer(){
+ var w = buyerW(), t = 0, i;
+ for(i = 0; i < w.length; i++) t += w[i];
+ var x = Math.random() * t, a = 0;
+ for(i = 0; i < w.length; i++){ a += w[i]; if(x < a) return BUYERS[i]; }
+ return BUYERS[0];
 }
 function addBuyer(){
- if(deals.length >= MAX_DEALS) return false;
+ if(deals.length >= maxDeals()) return false;
  var free = freeShelf();
  if(!free.length) return false;
- var b = BUYERS[Math.floor(Math.random() * BUYERS.length)];
+ var b = pickBuyer();
  var ok = [];
  for(var j = 0; j < free.length; j++) if(free[j].q >= b.min) ok.push(free[j]);
  if(!ok.length) return false;
  var it = ok[Math.floor(Math.random() * ok.length)];
- deals.push({b:b, u:it.u, sum:offerFor(it, b), ends:Date.now() + DEAL_LIFE, min:false});
+ var pp = priceParts(it, b);
+ deals.push({b:b, u:it.u, sum:pp.sum, p:pp, min:false});
  return true;
 }
 /* Между первой продажей и второй находкой случайные покупатели не приходят:
@@ -1569,7 +1748,7 @@ function addBuyer(){
 function wavesOn(){ return S.tut >= FREE_STEP; }
 function newWave(){
  if(!wavesOn()){ scheduleWave(); return; }
- var want = 1 + Math.floor(Math.random() * MAX_DEALS), got = 0;
+ var want = 1 + Math.floor(Math.random() * maxDeals()), got = 0;
  for(var i = 0; i < want; i++) if(addBuyer()) got++;
  scheduleWave();
  if(got){
@@ -1579,12 +1758,25 @@ function newWave(){
  }
 }
 
-function sellDeal(u){
+/* Репутацию двигают только решения игрока. Менеджер даёт четверть плюса и
+   не даёт минусов: иначе автоматизация сама нагонит сотню, и решение исчезнет. */
+function repForSale(d, it, auto){
+ var b = d.b, q = it.q, v = 0;
+ if(q >= 0.999) v = 2;
+ else if((b === BUYERS[1] || b === BUYERS[2] || b === VIP) && q >= 0.70) v = 1;
+ if(b === BUYERS[3] && q >= 0.70) v = -2;
+ else if(b !== BUYERS[3] && q < 0.40) v = -1;
+ if(auto) v = v > 0 ? v * 0.25 : 0;
+ if(v) addRep(v);
+}
+function sellDeal(u, auto){
  var d = dealOf(u), it = shelfOf(u);
  if(!d || !it) return no();
  var a = ART[it.loc][it.i];
  var m = saleMult(), paid = Math.round(d.sum * m);
+ repForSale(d, it, auto);
  S.coins += paid; S.sold++; S.soldLoc[S.loc]++;
+ mark("sale");
  for(var i = 0; i < S.shelf.length; i++) if(S.shelf[i].u === u){ S.shelf.splice(i, 1); break; }
  spendSet();
  toast(a.n + "\n+" + fmt(paid) + (m > 1 ? "\nКОЛЛЕКЦИЯ ×" + m.toFixed(2) : ""));
@@ -1592,16 +1784,19 @@ function sellDeal(u){
  for(var k = deals.length - 1; k >= 0; k--) if(deals[k].u === u) deals.splice(k, 1);
  save(); paintShop(); sync();
 }
-function holdDeal(u){
+/* Отказ — законный ход и репутацию не трогает: иначе единственной стратегией
+   становится продавать всё подряд. Он же единственный способ освободить слот
+   очереди, поэтому кнопка стоит рядом с продажей, а не прячется. */
+function refuseDeal(u){
  var d0 = dealOf(u);
  if(!d0) return no();
- if(d0.tut){ toast("ЭТОГО НЕ ПРИДЕРЖАТЬ\nПРОДАВАЙ"); return no(); }
+ if(d0.tut){ toast("ЭТОГО НЕ ОТПУСТИТЬ\nПРОДАВАЙ"); return no(); }
  beep(300, .06, "square", .03);
  dropDeal(u, "ПОКУПАТЕЛЬ УШЁЛ");
 }
 
 function displayItem(i){
- if(S.shelf.length >= SHELF_MAX) return no();
+ if(S.shelf.length >= shelfMax()) return no();
  var it = S.store[i];
  if(!it) return no();
  S.store.splice(i, 1);
@@ -1617,13 +1812,13 @@ function handTag(it){
 function paintStore(){
  var wrap = document.getElementById("store");
  wrap.innerHTML = "";
- document.getElementById("storeN").textContent = S.store.length + "/" + STORE_MAX;
+ document.getElementById("storeN").textContent = S.store.length + "/" + storeMax();
  if(!S.store.length){
   var e = document.createElement("div");
   e.className = "si empty"; e.textContent = "ПУСТО";
   wrap.appendChild(e); return;
  }
- var free = S.shelf.length < SHELF_MAX;
+ var free = S.shelf.length < shelfMax();
  for(var i = 0; i < S.store.length; i++)(function(i){
   var it = S.store[i], a = ART[it.loc][it.i];
   var w = document.createElement("div");
@@ -1637,6 +1832,12 @@ function paintStore(){
     handTag(it);
   b.onclick = function(){ displayItem(i); };
   w.appendChild(b);
+  var tb = document.createElement("button");
+  tb.type = "button";
+  tb.className = "btn trash" + (trashArmed(it.u) ? " arm" : "");
+  tb.textContent = trashArmed(it.u) ? "ТОЧНО?" : "ВЫБРОСИТЬ";
+  tb.onclick = function(){ trashItem(it.u, "store"); };
+  w.appendChild(tb);
   if(canDonate(it)){
    var d = document.createElement("button");
    d.type = "button"; d.className = "btn donate"; d.textContent = "В АЛЬБОМ";
@@ -1645,6 +1846,34 @@ function paintStore(){
   }
   wrap.appendChild(w);
  })(i);
+}
+
+/* Выбросить находку. Рядовое уходит сразу, всё выше — по второму нажатию:
+   случайно потерянный уникум — худшее, что может случиться на складе.
+   Наёмники не выбрасывают ничего никогда, это ход только игрока. */
+var trashArm = {u:0, at:0};
+function trashArmed(u){ return trashArm.u === u && Date.now() - trashArm.at < 4000; }
+function trashItem(u, where){
+ var list = where === "crate" ? S.crate : S.store, idx = -1;
+ for(var i = 0; i < list.length; i++) if(list[i].u === u){ idx = i; break; }
+ if(idx < 0) return no();
+ var it = list[idx], a = ART[it.loc][it.i];
+ if(tierOf(it.i) > 0 && !trashArmed(u)){
+  trashArm = {u:u, at:Date.now()};
+  beep(220, .07, "square", .03);
+  toast(a.n + " · " + TIER_NAME[tierOf(it.i)] +
+   (albumOn() && !S.album[it.loc][it.i] ? "\nЭТОГО НЕТ В АЛЬБОМЕ" : "") + "\nЖМИ ЕЩЁ РАЗ, ЧТОБЫ ВЫБРОСИТЬ");
+  crateSig = ""; shopSig = "";
+  paintCrate(); if(screen === "shop") paintShop();
+  return;
+ }
+ list.splice(idx, 1);
+ trashArm = {u:0, at:0};
+ beep(140, .09, "square", .03);
+ toast(a.n + "\nВЫБРОШЕНО");
+ if(where === "crate" && cItem && cItem.u === u){ cItem = null; clearClean(); ensureClean(); }
+ crateSig = ""; shopSig = "";
+ save(); paintCrate(); if(screen === "shop") paintShop(); sync();
 }
 
 /* Сдать экспонат. Ищем по стабильному id: пока игрок думает, менеджер мог
@@ -1658,6 +1887,7 @@ function donate(u){
  S.album[it.loc][it.i] = 1;
  S.store.splice(idx, 1);
  var armed = armSet(it.loc, tierOf(it.i));
+ if(armed) addRep(5);
  beep(523, .10, "square", .05);
  setTimeout(function(){ beep(784, .16, "square", .05); }, 110);
  toast(ART[it.loc][it.i].n + "\n" + (armed
@@ -1711,7 +1941,7 @@ function paintShop(){
  paintStore();
  var wrap = document.getElementById("slots");
  wrap.innerHTML = "";
- for(var i = 0; i < SHELF_MAX; i++){
+ for(var i = 0; i < shelfMax(); i++){
   var d = document.createElement("div");
   d.className = "slot";
   var it = S.shelf[i];
@@ -1719,12 +1949,11 @@ function paintShop(){
    var a = ART[it.loc][it.i];
    d.className = "slot full";
    if(dealOf(it.u)) d.style.borderColor = "var(--hud)";
-   d.innerHTML = svgOf(a, 40) +
+   d.innerHTML = (it.h ? '<div class="dot">•</div>' : "") + svgOf(a, 24) +
      '<div class="sn">' + a.n + '</div>' +
-     '<div class="sq" style="color:' + qualColor(it.q) + '">' + Math.round(it.q * 100) + '%</div>' +
-     handTag(it);
+     '<div class="sq" style="color:' + qualColor(it.q) + '">' + Math.round(it.q * 100) + '%</div>';
   }else{
-   d.innerHTML = '<div class="empty">СЛОТ<br>СВОБОДЕН</div>';
+   d.innerHTML = '<div class="empty">СЛОТ СВОБОДЕН</div>';
   }
   wrap.appendChild(d);
  }
@@ -1747,26 +1976,31 @@ function paintShop(){
   var a = ART[it.loc][it.i];
   var card = document.createElement("div");
   card.className = "offer" + (d.min ? " min" : "");
-  var left = Math.max(0, Math.ceil((d.ends - Date.now()) / 1000));
 
   var head = document.createElement("div");
   head.className = "oh";
-  head.innerHTML = '<span class="on">' + d.b.n + '</span><span class="oc" id="dtm' + d.u + '">' +
-    (d.tut ? "ЖДЁТ" : left + " С") + '</span>' +
+  head.innerHTML = '<span class="on">' + d.b.n + '</span><span class="oc">ЖДЁТ</span>' +
     '<span class="ot">' + (d.min ? "+" : "–") + '</span>';
   head.onclick = function(){ d.min = !d.min; beep(330, .05, "square", .025); paintShop(); };
   card.appendChild(head);
 
   var body = document.createElement("div");
   body.className = "ob";
+  var rows = d.p ? partRows(d, it) : [];
+  var full = "";
+  if(d.open) for(var pi = 0; pi < rows.length; pi++)
+   full += '<div class="prow"><span>' + rows[pi][0] + '</span><span>' + rows[pi][1] + '</span></div>';
   body.innerHTML =
     '<div class="row" style="align-items:flex-start;gap:10px">' + faceSvg(d.b) +
       '<div class="ol" style="flex-grow:1;min-width:0">' + d.b.line + '</div></div>' +
-    '<div class="orow"><span class="ofor">ЗА ' + a.n + '</span><span class="osum">+' +
+    '<div class="orow" id="osum' + d.u + '"><span class="ofor">ЗА ' + a.n + '</span><span class="osum">+' +
       fmt(Math.round(d.sum * saleMult())) + '</span></div>' +
-    '<div class="onote">Качество ' + Math.round(it.q * 100) + '% · множитель ×' + qualMult(it.q).toFixed(2) +
-      ' · ' + (it.h ? 'чистил ты' : 'чистил наёмник') +
-      (bestSet() ? ' · коллекция ×' + saleMult().toFixed(2) + ', осталось ' + bestSet().left : '') + '</div>';
+    (d.open ? '<div class="parts">' + full + '</div>'
+            : '<div class="onote">×' + qualMult(it.q).toFixed(2) + ' качество · ×' + d.b.m.toFixed(2) + ' ' +
+              d.b.n.toLowerCase() + ' · ×' + (d.p ? d.p.rep : repMult()).toFixed(2) + ' репутация · жми сумму</div>');
+
+  var sumEl = body.querySelector("#osum" + d.u);
+  if(sumEl) sumEl.onclick = function(){ d.open = !d.open; beep(392, .04, "square", .02); paintShop(); };
 
   var row = document.createElement("div");
   row.className = "row"; row.style.gap = "8px";
@@ -1775,11 +2009,11 @@ function paintShop(){
   bs.onclick = function(){ sellDeal(d.u); };
   var bh = document.createElement("button");
   bh.className = "btn half"; bh.type = "button";
-  /* Туторную сделку придержать нельзя: шаг обещает продажу, и отказ от неё
+  /* От туторной сделки отказаться нельзя: шаг обещает продажу, и отказ
      оставил бы игрока без денег и без покупателя. */
-  bh.textContent = d.tut ? "НЕ СЕЙЧАС" : "ПРИДЕРЖАТЬ";
+  bh.textContent = d.tut ? "НЕ СЕЙЧАС" : "ОТКАЗАТЬ";
   bh.disabled = !!d.tut;
-  bh.onclick = function(){ holdDeal(d.u); };
+  bh.onclick = function(){ refuseDeal(d.u); };
   row.appendChild(bs); row.appendChild(bh);
   body.appendChild(row);
   card.appendChild(body);
@@ -1795,7 +2029,8 @@ var shopSig = "";
 function shopState(){
  var b0 = bestSet();
  var a = [S.shelf.length, S.store.length, b0 ? b0.t + ":" + b0.left : "-"];
- for(var i = 0; i < deals.length; i++) a.push(deals[i].u + ":" + deals[i].sum + ":" + (deals[i].min ? 1 : 0));
+ for(var i = 0; i < deals.length; i++)
+  a.push(deals[i].u + ":" + deals[i].sum + ":" + (deals[i].min ? 1 : 0) + ":" + (deals[i].open ? 1 : 0));
  a.push("|");
  for(var j = 0; j < S.shelf.length; j++) a.push(S.shelf[j].u);
  a.push("|");
@@ -1803,13 +2038,7 @@ function shopState(){
  return a.join(",");
 }
 function shopSync(){
- if(shopState() !== shopSig){ paintShop(); return; }
- var now = Date.now();
- for(var i = 0; i < deals.length; i++){
-  if(deals[i].tut) continue;
-  var el = document.getElementById("dtm" + deals[i].u);
-  if(el) el.textContent = Math.max(0, Math.ceil((deals[i].ends - now) / 1000)) + " С";
- }
+ if(shopState() !== shopSig) paintShop();
 }
 
 /* ---------- карта ---------- */
@@ -1818,9 +2047,83 @@ function bankCap(r){ return passiveOf(r) * PASSIVE_CAP_MIN; }
 function canTravel(r){
  return S.digger[S.loc] && S.cleaner[S.loc] && S.unlocked[r] === 0 && S.coins >= LOC[r].open;
 }
-function paintMap(){
- var list = document.getElementById("mapList");
- list.innerHTML = "";
+/* Карта поделена на вкладки: одним списком локации, люди, инструмент и лавка
+   перестают помещаться, и до прокачки лопаты приходится скроллить. Точка на
+   вкладке = там появилось что-то по карману. */
+var MTAB = [{k:"places", n:"МЕСТА"}, {k:"people", n:"ЛЮДИ"},
+            {k:"tools", n:"ИНСТРУМЕНТ"}, {k:"shop", n:"ЛАВКА"}];
+/* Вкладка лавки открывается после первой продажи: до неё игрок не видел
+   ни одного покупателя, и покупки под них читались бы как лишние кнопки. */
+function shopTabOn(){ return S.sold >= 1; }
+function mapTab(){
+ var t = S.mapTab || 0;
+ if(t === 3 && !shopTabOn()) t = 0;
+ return t;
+}
+function tabNew(i){
+ var k = MTAB[i].k, r, L = loc();
+ if(k === "places"){
+  for(r = 0; r < LOC.length; r++){
+   if(S.left[r] && r !== S.loc && Math.floor(S.bank[r]) >= 1) return true;
+   if(!S.unlocked[r] && canTravel(r)) return true;
+  }
+  return false;
+ }
+ if(k === "people")
+  return (!S.digger[S.loc] && S.coins >= L.digger) ||
+         (!S.cleaner[S.loc] && S.coins >= L.cleaner) ||
+         (!S.manager[S.loc] && S.coins >= L.mgr);
+ if(k === "tools"){
+  for(r = 0; r < UP.length; r++) if(upLv(UP[r].k) < UP[r].max && S.coins >= upCost(UP[r].k)) return true;
+  return false;
+ }
+ for(r = 0; r < SHOP.length; r++) if(shopLv(SHOP[r].k) < SHOP[r].max && S.coins >= shopCost(SHOP[r].k)) return true;
+ return false;
+}
+function setTab(i){
+ S.mapTab = i;
+ beep(392, .05, "square", .03);
+ save(); paintMap();
+}
+function paintTabs(){
+ var wrap = document.getElementById("mapTabs"), cur = mapTab();
+ wrap.innerHTML = "";
+ for(var i = 0; i < MTAB.length; i++)(function(i){
+  if(i === 3 && !shopTabOn()) return;
+  var b = document.createElement("button");
+  b.type = "button";
+  b.className = "mtab" + (i === cur ? " on" : "") + (tabNew(i) ? " new" : "");
+  b.id = "mtab" + i;
+  b.textContent = MTAB[i].n;
+  b.onclick = function(){ setTab(i); };
+  wrap.appendChild(b);
+ })(i);
+}
+
+function pips(lv, max){
+ var h = '<div class="pips">';
+ for(var i = 0; i < max; i++) h += '<i class="pip' + (i < lv ? " on" : "") + '"></i>';
+ return h + '</div>';
+}
+/* Одна и та же карточка покупки: имя с уровнем, описание, шкала уровней, цена. */
+function upCard(list, name, lv, max, desc, cost, id, buy){
+ var card = document.createElement("div"); card.className = "loc";
+ var g = document.createElement("div"); g.className = "g";
+ g.innerHTML = '<div class="ln">' + name + ' · ' + lv + '/' + max + '</div>' +
+   '<div class="ls">' + desc + '</div>' + pips(lv, max);
+ var btn = document.createElement("button");
+ btn.className = "btn"; btn.type = "button"; btn.id = id;
+ if(lv >= max){ btn.textContent = "МАКСИМУМ"; btn.disabled = true; }
+ else{
+  btn.textContent = fmt(cost);
+  if(S.coins >= cost){ btn.classList.add("can"); btn.onclick = buy; }
+  else btn.disabled = true;
+ }
+ card.appendChild(g); card.appendChild(btn);
+ list.appendChild(card);
+}
+
+function mapPlaces(list){
  for(var k = 0; k < LOC.length; k++)(function(k){
   var L = LOC[k], card = document.createElement("div");
   card.className = "loc" + (k === S.loc ? " here" : "");
@@ -1858,69 +2161,142 @@ function paintMap(){
    btn.disabled = bank < 1;
    if(bank >= 1){ btn.classList.add("can"); btn.onclick = function(){ collect(k); }; }
   }
-
   card.appendChild(g); card.appendChild(btn);
   list.appendChild(card);
-
-  if(k === S.loc){
-   var hire = document.createElement("div"); hire.className = "hire";
-   var bd = document.createElement("button"); bd.className = "btn"; bd.type = "button"; bd.id = "hireDig";
-   if(S.digger[k]){ bd.textContent = "КОПАТЕЛЬ НАНЯТ"; bd.disabled = true; }
-   else{
-    bd.textContent = "КОПАТЕЛЬ " + fmt(L.digger);
-    if(S.coins >= L.digger){ bd.classList.add("can"); bd.onclick = function(){ hireOne(k, "digger"); }; }
-    else bd.disabled = true;
-   }
-   var bc = document.createElement("button"); bc.className = "btn"; bc.type = "button"; bc.id = "hireCln";
-   if(S.cleaner[k]){ bc.textContent = "ЧИСТИЛЬЩИК НАНЯТ"; bc.disabled = true; }
-   else{
-    bc.textContent = "ЧИСТИЛЬЩИК " + fmt(L.cleaner);
-    if(S.coins >= L.cleaner){ bc.classList.add("can"); bc.onclick = function(){ hireOne(k, "cleaner"); }; }
-    else bc.disabled = true;
-   }
-   hire.appendChild(bd); hire.appendChild(bc);
-   list.appendChild(hire);
-
-   var hire2 = document.createElement("div"); hire2.className = "hire";
-   var bm = document.createElement("button"); bm.className = "btn"; bm.type = "button"; bm.id = "hireMgr";
-   if(S.manager[k]){
-    bm.textContent = "МЕНЕДЖЕР НАНЯТ"; bm.disabled = true;
-    var bmode = document.createElement("button");
-    bmode.className = "btn can"; bmode.type = "button"; bmode.id = "mgrMode";
-    bmode.textContent = S.mgrMode ? "ЖДЁТ ЛУЧШИХ" : "ПРОДАЁТ СРАЗУ";
-    bmode.onclick = function(){
-     S.mgrMode = S.mgrMode ? 0 : 1;
-     beep(440, .06, "square", .03);
-     toast(S.mgrMode ? "МЕНЕДЖЕР ЖДЁТ\nТОЛЬКО МУЗЕЙ И КОЛЛЕКЦИОНЕР" : "МЕНЕДЖЕР ПРОДАЁТ СРАЗУ");
-     save(); paintMap(); sync();
-    };
-    hire2.appendChild(bm); hire2.appendChild(bmode);
-   }else{
-    bm.textContent = "МЕНЕДЖЕР " + fmt(L.mgr);
-    if(S.coins >= L.mgr){ bm.classList.add("can"); bm.onclick = function(){ hireOne(k, "manager"); }; }
-    else bm.disabled = true;
-    hire2.appendChild(bm);
-   }
-   list.appendChild(hire2);
-
-   var note = document.createElement("div");
-   note.className = "small";
-   note.style.lineHeight = "1.25";
-   note.textContent = "Копатель приносит находки сам. Чистильщик чистит их кое-как — от 50 до 85% качества. Менеджер сам выставляет товар на прилавок и торгует: либо продаёт первому встречному, либо ждёт музей и коллекционера. Когда наняты копатель и чистильщик, лавку можно оставить и уехать.";
-   list.appendChild(note);
-  }
  })(k);
 
- paintUps(list);
+ var note = document.createElement("div");
+ note.className = "small"; note.style.lineHeight = "1.25";
+ note.textContent = "Уехать можно, когда в текущей лавке наняты копатель и чистильщик: без них она встанет. Инструмент и альбом переезжают с тобой, а лавка и репутация остаются здесь — в новом городе всё сначала.";
+ list.appendChild(note);
 
+}
+
+function crewRow(list, name, key, hired, cost, hireFn, id, sub){
+ var card = document.createElement("div"); card.className = "loc";
+ var g = document.createElement("div"); g.className = "g";
+ g.innerHTML = '<div class="ln">' + name + (hired ? "" : " · " + fmt(cost)) + '</div>' +
+   '<div class="ls">' + sub + '</div>';
+ var btn = document.createElement("button");
+ btn.className = "btn"; btn.type = "button"; btn.id = id;
+ if(hired){
+  btn.textContent = S.pause[key] ? "ПРОДОЛЖИТЬ" : "ПАУЗА";
+  btn.classList.add("can");
+  btn.onclick = function(){ S.pause[key] = S.pause[key] ? 0 : 1; save(); paintMap(); sync(); };
+ }else{
+  btn.textContent = "НАНЯТЬ";
+  if(S.coins >= cost){ btn.classList.add("can"); btn.onclick = hireFn; }
+  else{ btn.disabled = true; btn.textContent = "ДОРОГО"; }
+ }
+ card.appendChild(g); card.appendChild(btn);
+ list.appendChild(card);
+}
+function mapPeople(list){
+ var k = S.loc, L = LOC[k];
+ crewRow(list, "КОПАТЕЛЬ", "d", S.digger[k], L.digger,
+  function(){ hireOne(k, "digger"); }, "hireDig",
+  S.digger[k] ? (S.botHole < 0 || !holes()[S.botHole] ? "ЛУНКА НЕ НАЗНАЧЕНА" : "КОПАЕТ · " + holes()[S.botHole].n)
+              : "Сам копает назначенную лунку. Редкое не приносит.");
+ crewRow(list, "ЧИСТИЛЬЩИК", "c", S.cleaner[k], L.cleaner,
+  function(){ hireOne(k, "cleaner"); }, "hireCln",
+  S.cleaner[k] ? (S.clnAll ? "ЧИСТИТ ВСЁ ПОДРЯД" : "ОТКЛАДЫВАЕТ ЦЕННОЕ")
+               : "Чистит на 50–85%. Экспонат для альбома не даёт.");
+ crewRow(list, "МЕНЕДЖЕР", "m", S.manager[k], L.mgr,
+  function(){ hireOne(k, "manager"); }, "hireMgr",
+  S.manager[k] ? (S.mgrMode ? "ЖДЁТ МУЗЕЙ И КОЛЛЕКЦИОНЕРА" : "ПРОДАЁТ ПЕРВОМУ ВСТРЕЧНОМУ")
+               : "Сам торгует, " + MGR_CAP + " сделки в минуту. Остальное ждёт тебя.");
+
+ if(S.manager[k]){
+  var mb = document.createElement("button");
+  mb.className = "btn can"; mb.type = "button"; mb.id = "mgrMode";
+  mb.textContent = S.mgrMode ? "ЖДЁТ ЛУЧШИХ" : "ПРОДАЁТ СРАЗУ";
+  mb.onclick = function(){
+   S.mgrMode = S.mgrMode ? 0 : 1;
+   beep(440, .06, "square", .03);
+   toast(S.mgrMode ? "МЕНЕДЖЕР ЖДЁТ\nТОЛЬКО МУЗЕЙ И КОЛЛЕКЦИОНЕР" : "МЕНЕДЖЕР ПРОДАЁТ СРАЗУ");
+   save(); paintMap(); sync();
+  };
+  list.appendChild(mb);
+ }
+
+ var note = document.createElement("div");
+ note.className = "small"; note.style.lineHeight = "1.25";
+ note.textContent = "Каждый наёмник оставляет тебе четверть мест, но не меньше одного: своя находка всегда влезет. Тонкие настройки — в панели бригады сверху.";
+ list.appendChild(note);
+}
+
+function mapTools(list){
+ var head = document.createElement("div");
+ head.className = "small"; head.style.letterSpacing = "1px";
+ head.textContent = "ИНСТРУМЕНТ · ОБЩИЙ НА ВСЕ ЛОКАЦИИ";
+ list.appendChild(head);
+ for(var i = 0; i < UP.length; i++)(function(u){
+  upCard(list, u.n, upLv(u.k), u.max, u.d, upCost(u.k), "up_" + u.k,
+   function(){ buyUp(u.k); });
+ })(UP[i]);
+}
+
+function mapShop(list){
+ var v = repOf();
+ var r = document.createElement("div");
+ r.className = "rep";
+ r.innerHTML = '<div class="rh"><span>РЕПУТАЦИЯ · ' + loc().n + '</span><b>' +
+   repName(v) + ' · ' + Math.round(v) + '</b></div>' +
+   '<div class="bar"><i style="width:' + v + '%"></i></div>' +
+   '<div class="small">Цена ×' + repMult().toFixed(2) + '. ' +
+   (v < 30 ? "Перекупщик заходит вдвое чаще." :
+   (v > 70 ? "Музей и коллекционер заходят вдвое чаще." : "Поток покупателей обычный.")) + '</div>';
+ list.appendChild(r);
+
+ for(var i = 0; i < SHOP.length; i++)(function(u){
+  upCard(list, u.n, shopLv(u.k), u.max, u.d, shopCost(u.k), "shop_" + u.k,
+   function(){ buyShop(u.k); });
+ })(SHOP[i]);
+
+ var note = document.createElement("div");
+ note.className = "small"; note.style.lineHeight = "1.25";
+ note.textContent = "Лавка и репутация принадлежат этому городу. После переезда они остаются здесь и поднимают доход, который старая лавка присылает сама.";
+ list.appendChild(note);
+}
+
+function buyShop(k){
+ var def = shopDef(k), lv = shopLv(k);
+ if(!def || lv >= def.max) return no();
+ var c = shopCost(k);
+ if(S.coins < c) return no();
+ S.coins -= c;
+ shopAt(S.loc)[k] = lv + 1;
+ mark("shop_" + k);
+ beep(523, .07, "square", .04); setTimeout(function(){ beep(784, .12, "square", .04); }, 90);
+ toast(def.n + " " + (lv + 1) + " УР.");
+ save(); paintMap(); if(screen === "shop") paintShop(); sync();
+}
+
+function paintMap(){
+ paintTabs();
+ var list = document.getElementById("mapList"), t = mapTab();
+ list.innerHTML = "";
+ if(t === 1) mapPeople(list);
+ else if(t === 2) mapTools(list);
+ else if(t === 3) mapShop(list);
+ else mapPlaces(list);
+ paintMapFoot(t);
+ mapSig = mapState();
+}
+/* Сброс живёт под списком, а не в нём: в списке он уезжал за нижний край вместе
+   с прокруткой, и найти его можно было только случайно. Здесь он всегда на виду
+   и всегда на одном месте — и только на вкладке МЕСТА, подальше от покупок. */
+function paintMapFoot(t){
+ var foot = document.getElementById("mapFoot");
+ foot.innerHTML = "";
+ if(t !== 0) return;
  var rb = document.createElement("button");
  rb.className = "btn"; rb.type = "button"; rb.id = "reset";
  var armed = Date.now() - resetArm < 4000;
  rb.classList.toggle("arm", armed);
  rb.textContent = armed ? "ТОЧНО? ЖМИ ЕЩЁ РАЗ" : "СБРОСИТЬ ПРОГРЕСС";
  rb.onclick = resetProgress;
- list.appendChild(rb);
- mapSig = mapState();
+ foot.appendChild(rb);
 }
 
 var mapSig = "";
@@ -1931,38 +2307,16 @@ function buyUp(k){
  var c = upCost(k);
  if(S.coins < c) return no();
  S.coins -= c; S.up[k] = lv + 1;
+ mark("up_" + k);
  beep(523, .07, "square", .04); setTimeout(function(){ beep(784, .12, "square", .04); }, 90);
  toast(def.n + " " + (lv + 1) + " УР.");
  save(); paintMap(); sync();
 }
-function paintUps(list){
- var head = document.createElement("div");
- head.className = "small"; head.style.letterSpacing = "1px";
- head.textContent = "ИНСТРУМЕНТ · ОБЩИЙ НА ВСЕ ЛОКАЦИИ";
- list.appendChild(head);
- for(var i = 0; i < UP.length; i++)(function(u){
-  var lv = upLv(u.k), maxed = lv >= u.max, c = upCost(u.k);
-  var card = document.createElement("div"); card.className = "loc";
-  var g = document.createElement("div"); g.className = "g";
-  var t = document.createElement("div"); t.className = "ln";
-  t.textContent = u.n + " · " + lv + "/" + u.max;
-  var sub = document.createElement("div"); sub.className = "ls"; sub.textContent = u.d;
-  g.appendChild(t); g.appendChild(sub);
-  var btn = document.createElement("button");
-  btn.className = "btn"; btn.type = "button"; btn.id = "up_" + u.k;
-  if(maxed){ btn.textContent = "МАКСИМУМ"; btn.disabled = true; }
-  else{
-   btn.textContent = fmt(c);
-   if(S.coins >= c){ btn.classList.add("can"); btn.onclick = function(){ buyUp(u.k); }; }
-   else btn.disabled = true;
-  }
-  card.appendChild(g); card.appendChild(btn);
-  list.appendChild(card);
- })(UP[i]);
-}
 function mapState(){
  var a = [S.loc, Math.floor(S.coins), S.mgrMode, Date.now() - resetArm < 4000 ? 1 : 0,
-          upLv("dig"), upLv("brush"), upLv("hand")];
+          upLv("dig"), upLv("brush"), upLv("hand"), mapTab(), shopTabOn() ? 1 : 0,
+          Math.round(repOf()), S.pause.d, S.pause.c, S.pause.m, S.clnAll];
+ for(var q = 0; q < SHOP.length; q++) a.push(shopLv(SHOP[q].k));
  for(var k = 0; k < LOC.length; k++)
   a.push(S.unlocked[k], S.digger[k], S.cleaner[k], S.manager[k], S.left[k],
          Math.floor(S.bank[k]) >= 1 ? 1 : 0);
@@ -1991,13 +2345,14 @@ function resetProgress(){
   return;
  }
  resetArm = 0;
- try{ localStorage.removeItem("dig.v5"); }catch(e){}
+ try{ localStorage.removeItem("dig.v6"); }catch(e){}
  location.reload();
 }
 function hireOne(k, kind){
  var L = LOC[k], cost = kind === "digger" ? L.digger : (kind === "cleaner" ? L.cleaner : L.mgr);
  if(S.coins < cost) return no();
  S.coins -= cost;
+ mark("hire_" + kind);
  if(kind === "digger") S.digger[k] = 1;
  else if(kind === "cleaner") S.cleaner[k] = 1;
  else S.manager[k] = 1;
@@ -2060,8 +2415,18 @@ var ev = null, buff = null, evAt = Date.now() + EV_FIRST;
 /* События открываются с первым копателем, цели — с первым чистильщиком.
    Считаем по всем локациям: переезд не должен отнимать уже открытое. */
 function anyHired(a){ return !!(a[0] || a[1] || a[2]); }
-function evOn(){ return anyHired(S.digger); }
-function goalsOn(){ return anyHired(S.cleaner); }
+/* События открываются с первым копателем, но в туторе ждут ещё минуту после того,
+   как игрок назначил копателю лунку: иначе зелёная плашка выскакивает прямо поверх
+   шага про назначение, и две подсказки лезут друг на друга. */
+var EV_HOLD = 60000;
+function evOn(){
+ if(!anyHired(S.digger)) return false;
+ if(S.tut < TUT.length && (!S.botAt || Date.now() - S.botAt < EV_HOLD)) return false;
+ return true;
+}
+/* Цели раньше открывались вместе с чистильщиком, и первые двадцать минут игрок
+   жил без единой цели. Теперь — сразу после первой продажи. */
+function goalsOn(){ return S.sold >= 1 || anyHired(S.cleaner); }
 function veinOn(){ return !!buff && buff.k === "vein"; }
 function hypeOn(){ return !!buff && buff.k === "hype"; }
 function evReset(){ evAt = Date.now() + EV_MIN + Math.random() * (EV_MAX - EV_MIN); }
@@ -2071,7 +2436,7 @@ function evPick(){
  if(deals.length) c.push("hype");
  var f = freeShelf(), ok = 0;
  for(var i = 0; i < f.length; i++) if(f[i].q >= VIP.min) ok++;
- if(ok && deals.length < MAX_DEALS) c.push("vip");
+ if(ok && deals.length < maxDeals()) c.push("vip");
  return c[Math.floor(Math.random() * c.length)];
 }
 function spawnEv(){
@@ -2083,9 +2448,10 @@ function spawnEv(){
 function vipDeal(){
  var f = freeShelf(), ok = [];
  for(var i = 0; i < f.length; i++) if(f[i].q >= VIP.min) ok.push(f[i]);
- if(!ok.length || deals.length >= MAX_DEALS) return false;
+ if(!ok.length || deals.length >= maxDeals()) return false;
  var it = ok[Math.floor(Math.random() * ok.length)];
- deals.push({b:VIP, u:it.u, sum:offerFor(it, VIP), ends:Date.now() + VIP_MS, min:false});
+ var vp = priceParts(it, VIP);
+ deals.push({b:VIP, u:it.u, sum:vp.sum, p:vp, min:false});
  return true;
 }
 function catchEv(){
@@ -2098,11 +2464,12 @@ function catchEv(){
   buff = {k:"vein", t:kd, n:kn, ends:Date.now() + VEIN_MS};
   toast(kn + "\n" + kd + " 25 С");
  }else if(k === "hype"){
+  /* Ажиотаж не пересчитывает уже висящие предложения: без таймера это
+     превратило бы игру в «копи очередь и жди события». */
   buff = {k:"hype", t:kd, n:kn, ends:Date.now() + HYPE_MS};
-  for(var i = 0; i < deals.length; i++) deals[i].sum = Math.round(deals[i].sum * HYPE_MULT);
-  toast(kn + "\n" + kd + " 45 С");
+  toast(kn + "\n" + kd + " 45 С · НОВЫМ ПОКУПАТЕЛЯМ");
  }else if(k === "vip"){
-  if(vipDeal()) toast(kn + " У ПРИЛАВКА\nОКНО 15 С");
+  if(vipDeal()) toast(kn + " У ПРИЛАВКА\nЖДЁТ ОТВЕТА");
   else{ S.coins += Math.round(50 * loc().mult); toast("ВИП НЕ ДОЖДАЛСЯ"); }
  }else{
   if(S.crate.length < CRATE_MAX){
@@ -2142,7 +2509,8 @@ function evTick(){
  var now = Date.now();
  if(ev && now >= ev.ends){ ev = null; evReset(); }
  if(buff && now >= buff.ends) buff = null;
- if(!ev && !buff && evOn() && now >= evAt) spawnEv();
+ if(!evOn()) evReset();
+ else if(!ev && !buff && now >= evAt) spawnEv();
  paintEv();
 }
 
@@ -2205,7 +2573,7 @@ setInterval(function(){
      кончилась: иначе автоматизация обходит выбор лунки стороной.
      Одно место в ящике он всегда оставляет игроку. */
   var bh = S.botHole >= 0 ? holes()[S.botHole] : null;
-  if(S.pause.d || !bh || S.crate.length >= CRATE_MAX - 1) digAcc = 0;
+  if(S.pause.d || !bh || S.crate.length >= CRATE_MAX - keepFree(CRATE_MAX)) digAcc = 0;
   else{
    digAcc += 0.5;
    if(digAcc >= 12 * L.hard * layerMat(bh, bh.mats.length - 1).hp){
@@ -2222,7 +2590,7 @@ setInterval(function(){
   }
  }
  if(S.cleaner[S.loc]){
-  if(S.pause.c || botCrateIdx() < 0 || S.store.length >= STORE_MAX - 1) clnAcc = 0;
+  if(S.pause.c || botCrateIdx() < 0 || S.store.length >= storeMax() - keepFree(storeMax())) clnAcc = 0;
   else{
    clnAcc += 0.5;
    if(clnAcc >= 10 * L.hard){
@@ -2255,21 +2623,23 @@ setInterval(function(){
    mgrAcc = 0;
    /* Менеджер выставляет только разрешённые ярусы: уникальную вещь
       он иначе продаст раньше, чем игрок решит оставить её в альбоме. */
-   while(S.shelf.length < SHELF_MAX){
+   while(S.shelf.length < shelfMax()){
     var si = mgrStoreIdx();
     if(si < 0) break;
     S.shelf.push(S.store.splice(si, 1)[0]);
     crewFlash.m = Date.now();
    }
+   /* Менеджер разгребает очередь по порядку прихода, а не снимает сливки:
+      иначе игроку достаётся только то, что наёмник брать не захотел. */
    if(S.mgrSold < MGR_CAP){
-    for(var q = deals.length - 1; q >= 0; q--){
+    for(var q = 0; q < deals.length; q++){
      var dl = deals[q];
      if(S.mgrMode === 1 && dl.b.m < 1) continue;
      var sit = shelfOf(dl.u);
      if(!sit || !S.mgrTier[tierOf(sit.i)]) continue;
      crewFlash.m = Date.now();
      S.mgrSold++;
-     sellDeal(dl.u);
+     sellDeal(dl.u, true);
      break;
     }
    }else if(!mgrTired && deals.length){
@@ -2296,27 +2666,119 @@ setInterval(function(){
 
 setInterval(function(){
  var now = Date.now(), gone = 0;
+ /* Сделка снимается только вместе с предметом: своего таймера у неё больше нет. */
  for(var i = deals.length - 1; i >= 0; i--){
-  if(now >= deals[i].ends || !shelfOf(deals[i].u)){ deals.splice(i, 1); gone++; }
+  if(!shelfOf(deals[i].u)){ deals.splice(i, 1); gone++; }
  }
- if(gone){ toast(gone > 1 ? "ПОКУПАТЕЛИ УСТАЛИ ЖДАТЬ" : "ПОКУПАТЕЛЬ УСТАЛ ЖДАТЬ"); sync(); }
+ if(gone) sync();
  if(!S.shelf.length) dealAt = Math.max(dealAt, now + 3000);
  else if(now >= dealAt) newWave();
  if(screen === "shop") shopSync();
 }, 700);
 
+/* Оффлайн активной локации начисляет не деньги, а работу бригады: игрок
+   возвращается к полному ящику, то есть к работе руками, а не к сумме.
+   Потолок в два часа при окне в четыре создаёт упущенную выгоду — заходить
+   утром и вечером выгоднее, чем раз в сутки. */
+var AWAY_WINDOW = 4 * 3600, AWAY_WORK = 2 * 3600;
 function offline(){
  if(!S.t) return;
- var dt = Math.min(4 * 3600, (Date.now() - S.t) / 1000);
+ var dt = Math.min(AWAY_WINDOW, (Date.now() - S.t) / 1000);
  if(dt < 60) return;
- var total = 0;
+ var a = {bank:0, dug:0, cln:0, aside:0, sold:0, coins:0, hole:0, mins:Math.round(dt / 60)};
+
  for(var r = 0; r < LOC.length; r++){
   if(!S.left[r] || r === S.loc) continue;
   var add = Math.min(bankCap(r) - S.bank[r], passiveOf(r) / 60 * dt);
-  if(add > 0){ S.bank[r] += add; total += add; }
+  if(add > 0){ S.bank[r] += add; a.bank += add; }
  }
- if(total > 1) setTimeout(function(){ toast("ЛАВКИ РАБОТАЛИ\n+" + fmt(total) + " НА КАРТЕ"); }, 500);
+
+ var work = Math.min(dt, AWAY_WORK), L = loc();
+
+ /* Фазы идут вперемешку, а не по очереди: иначе копатель упирается в ящик
+    и останавливается навсегда, хотя чистильщик тут же освободил бы место. */
+ var nDig = 0, nCln = 0, nSell = 0, h = null;
+ if(S.digger[S.loc] && !S.pause.d){
+  h = S.botHole >= 0 ? holes()[S.botHole] : null;
+  if(h) nDig = Math.floor(work / (12 * L.hard * layerMat(h, h.mats.length - 1).hp));
+ }
+ if(S.cleaner[S.loc] && !S.pause.c) nCln = Math.floor(work / (10 * L.hard));
+ if(S.manager[S.loc] && !S.pause.m) nSell = Math.floor(work / 60) * MGR_CAP;
+
+ var guard = 4000;
+ while(guard-- > 0){
+  var did = false;
+
+  if(nDig > 0 && h && h.left > 0 && S.crate.length < CRATE_MAX - keepFree(CRATE_MAX)){
+   S.crate.push({loc:S.loc, i:botIdx(), u:newUid()});
+   S.digLoc[S.loc]++; a.dug++; nDig--; did = true;
+   h.left--;
+   S.adFinds = (S.adFinds || 0) + (h.t === "ad" ? 0 : 1);
+   /* Счётчик лунки уменьшается и за оффлайн: иначе лунки стали бы бесконечными. */
+   if(h.left <= 0){ collapseHole(S.botHole); a.hole = 1; h = null; }
+  }
+
+  if(nCln > 0 && S.store.length < storeMax() - keepFree(storeMax())){
+   var bi = botCrateIdx();
+   if(bi >= 0){
+    var raw = S.crate[bi];
+    nCln--; did = true;
+    if(botSkips(raw)){ raw.aside = 1; a.aside++; }
+    else{
+     S.crate.splice(bi, 1);
+     S.store.push({loc:raw.loc, i:raw.i, q:0.50 + Math.random() * 0.35, u:newUid(), h:0});
+     a.cln++;
+    }
+   }
+  }
+
+  if(nSell > 0){
+   while(S.shelf.length < shelfMax()){
+    var si = mgrStoreIdx();
+    if(si < 0) break;
+    S.shelf.push(S.store.splice(si, 1)[0]);
+   }
+   var sidx = -1;
+   for(var q = 0; q < S.shelf.length; q++) if(S.mgrTier[tierOf(S.shelf[q].i)]){ sidx = q; break; }
+   if(sidx >= 0){
+    /* Менеджер торгует по нижней планке: без наценки за идеал и без разброса
+       вверх. Полная цена за сон обесценила бы прилавок. */
+    var sit = S.shelf[sidx], art = ART[sit.loc][sit.i];
+    var paid = Math.max(1, Math.round(art.v * LOC[sit.loc].mult * qualMult(sit.q) * 0.7));
+    S.coins += paid; S.sold++; S.soldLoc[S.loc]++;
+    a.sold++; a.coins += paid; nSell--; did = true;
+    S.shelf.splice(sidx, 1);
+   }else nSell = 0;
+  }
+
+  if(!did) break;
+ }
+
+ if(a.bank < 1 && !a.dug && !a.cln && !a.sold && !a.aside) return;
+ save();
+ setTimeout(function(){ showAway(a); }, 400);
 }
+function awayRow(k, v){ return '<div class="awRow"><span>' + k + '</span><b>' + v + '</b></div>'; }
+function showAway(a){
+ var h = awayRow("ТЕБЯ НЕ БЫЛО", a.mins < 60 ? a.mins + " МИН" : Math.round(a.mins / 60) + " Ч");
+ if(a.dug) h += awayRow("ВЫКОПАНО", a.dug);
+ if(a.cln) h += awayRow("ОЧИЩЕНО", a.cln);
+ if(a.aside) h += awayRow("ОТЛОЖЕНО ТЕБЕ", a.aside);
+ if(a.sold) h += awayRow("ПРОДАНО", a.sold + " · +" + fmt(a.coins));
+ if(a.bank >= 1) h += awayRow("СТАРЫЕ ЛАВКИ", "+" + fmt(Math.round(a.bank)) + " НА КАРТЕ");
+ if(a.hole) h += awayRow("ЛУНКА", "КОНЧИЛАСЬ");
+ if(!a.dug && !a.cln && !a.sold) h += awayRow("БРИГАДА", "НЕКОМУ РАБОТАТЬ");
+ document.getElementById("awList").innerHTML = h;
+ document.getElementById("away").classList.add("on");
+ beep(440, .07, "square", .03);
+}
+document.getElementById("awOk").onclick = function(){
+ document.getElementById("away").classList.remove("on");
+ beep(392, .05, "square", .03);
+ crateSig = ""; shopSig = ""; holeSig = "";
+ paintCrate(); if(screen === "shop") paintShop();
+ sync();
+};
 
 /* ---------- тутор ---------- */
 
@@ -2375,6 +2837,11 @@ var TUT = [
   tgt:"hireDig", hard:0,
   wait:function(){ return S.digger[S.loc] || S.coins >= crewCost(); },
   c:function(){ return !!S.digger[S.loc]; }},
+ /* Наёмник без назначенной лунки просто стоит. Без этих двух шагов игрок
+    нанимает копателя, возвращается на раскоп и не понимает, почему ящик пуст. */
+ {t:"Копатель нанят, но сам он не решит, где копать. Открой лунки и жми «КОПАТЕЛЮ» на любой из них — он будет копать только её.", h:"Кнопка КОПАТЕЛЮ",
+  tgt:function(){ return (pickOpen || !curHole() || !dSite) ? "holePick" : "holeBtn"; }, hard:0,
+  c:function(){ return S.botHole >= 0; }},
  {t:"Иногда всплывает зелёная плашка. Лови её тапом — это короткая выгода: мягкий грунт, ажиотаж в лавке или богатый покупатель.", h:"Тапни плашку",
   tgt:"ev", hard:0,
   wait:function(){ return !!ev; },
@@ -2461,6 +2928,11 @@ function coachHide(){
 }
 /* Цель шага живёт на своём экране. Если игрок на другом, подсказка не исчезает,
    а переезжает на кнопку нужной вкладки — иначе шаг видно только там, где он и так очевиден. */
+/* Цель шага может лежать на вкладке карты, которая сейчас закрыта: тогда
+   вкладку переключаем сами, иначе кольцо рисуется в пустоту. */
+var TGT_TAB = {hireDig:1, hireCln:1, hireMgr:1, mgrMode:1, travelBtn:0,
+ up_dig:2, up_brush:2, up_hand:2,
+ shop_sign:3, shop_case:3, shop_store:3, shop_ads:3, shop_eye:3};
 var TGT_SCREEN = {digPit:"dig", digCta:"dig", holeBtn:"dig", holePick:"dig",
  clnPit:"clean", clnCta:"clean",
  slots:"shop", store:"shop", deals:"shop",
@@ -2509,14 +2981,27 @@ function drawCoach(s, idx){
   clearTimeout(fadeTimer);
   return;
  }
- var el = document.getElementById(s.tgt), away = "";
+ /* Цель бывает подвижной: одна и та же реплика ведёт то к кнопке ЛУНКИ,
+    то к карточке лунки — смотря что сейчас на экране. Поэтому tgt может быть
+    функцией, а не строкой. */
+ var tg = typeof s.tgt === "function" ? s.tgt() : s.tgt;
+ var el = document.getElementById(tg), away = "";
  if(!el || !el.getClientRects().length){
-  var sc = TGT_SCREEN[s.tgt];
-  var nav = sc && sc !== screen ? document.getElementById(NAV[sc]) : null;
-  if(!nav || !nav.getClientRects().length){ coachHide(); return; }
-  el = nav; away = sc;
+  var sc = TGT_SCREEN[tg];
+  /* Цель может сидеть на закрытой вкладке карты: открываем вкладку сами,
+     иначе шаг ведёт в пустоту и выглядит сломанным. */
+  if(sc === "map" && screen === "map" && TGT_TAB[tg] !== undefined && mapTab() !== TGT_TAB[tg]){
+   S.mapTab = TGT_TAB[tg];
+   paintMap();
+   el = document.getElementById(tg);
+  }
+  if(!el || !el.getClientRects().length){
+   var nav = sc && sc !== screen ? document.getElementById(NAV[sc]) : null;
+   if(!nav || !nav.getClientRects().length){ coachHide(); return; }
+   el = nav; away = sc;
+  }
  }
- var key = idx + (away ? "|" + away : "");
+ var key = idx + "|" + tg + (away ? "|" + away : "");
  if(curTut === key && Date.now() - lastDraw < 400) return;
  /* Цель может лежать ниже сгиба в прокручиваемом списке: без этого кольцо
     рисуется за экраном, и шаг выглядит сломанным. */
@@ -2534,7 +3019,7 @@ function drawCoach(s, idx){
  coach.classList.toggle("hard", !!s.hard);
  unlift();
  if(s.hard){
-  var ids = [away ? el.id : s.tgt].concat(s.allow || []);
+  var ids = [away ? el.id : tg].concat(s.allow || []);
   for(var i = 0; i < ids.length; i++){
    var e2 = document.getElementById(ids[i]);
    if(e2){ e2.classList.add("cup"); lifted.push(e2); }
@@ -2739,6 +3224,7 @@ function paintHoles(){
   var g = document.getElementById("hb" + k);
   if(g) g.onclick = function(){
    S.botHole = S.botHole === k ? -1 : k;
+   if(S.botHole === k && !S.botAt) S.botAt = Date.now();
    toast(S.botHole === k ? "КОПАТЕЛЬ КОПАЕТ\n" + holes()[k].n : "КОПАТЕЛЬ СНЯТ С ЛУНКИ");
    beep(392, .06, "square", .03);
    holeSig = ""; save(); sync();
@@ -2753,8 +3239,8 @@ function paintHoles(){
 var crateSig = "";
 function paintCrate(){
  var row = document.getElementById("crateRow");
- var sig = S.crate.map(function(x){ return x.u + ":" + x.i + ":" + (x.aside ? 1 : 0); }).join(",") +
-   "|" + S.clnPick + "|" + S.clnAll;
+ var sig = S.crate.map(function(x){ return x.u + ":" + x.i + ":" + (x.aside ? 1 : 0) +
+   ":" + (trashArmed(x.u) ? 1 : 0); }).join(",") + "|" + S.clnPick + "|" + S.clnAll;
  if(sig === crateSig) return;
  crateSig = sig;
  row.innerHTML = "";
@@ -2773,7 +3259,16 @@ function paintCrate(){
   b.innerHTML = svgOf(a, 26, kept ? "#6d8a58" : "#4a3a28") +
     '<div class="crn">' + (kept ? "ОТЛОЖЕНО" : "В КОРКЕ") + '</div>';
   b.onclick = function(){ pickClean(it.u); };
-  row.appendChild(b);
+  var w = document.createElement("div");
+  w.className = "crw";
+  w.appendChild(b);
+  var tb = document.createElement("button");
+  tb.type = "button";
+  tb.className = "btn trash" + (trashArmed(it.u) ? " arm" : "");
+  tb.textContent = trashArmed(it.u) ? "ТОЧНО?" : "ВЫБРОСИТЬ";
+  tb.onclick = function(){ trashItem(it.u, "crate"); };
+  w.appendChild(tb);
+  row.appendChild(w);
  })(S.crate[i]);
 }
 /* Переключение сбрасывает начатую чистку: находка возвращается в ящик целой,
@@ -2816,9 +3311,9 @@ function paintCrew(){
  var fd = now - crewFlash.d < 900, fc = now - crewFlash.c < 900, fm = now - crewFlash.m < 900;
  var dTxt = fd ? "+1 В ЯЩИК" : (S.pause.d ? "НА ПАУЗЕ" :
    (S.botHole < 0 || !holes()[S.botHole] ? "ЛУНКА НЕ НАЗНАЧЕНА" :
-   (S.crate.length >= CRATE_MAX - 1 ? "МЕСТО ОСТАВЛЕНО ТЕБЕ" : "КОПАЕТ " + holes()[S.botHole].n)));
+   (S.crate.length >= CRATE_MAX - keepFree(CRATE_MAX) ? "МЕСТО ОСТАВЛЕНО ТЕБЕ" : "КОПАЕТ " + holes()[S.botHole].n)));
  var cTxt = fc ? "+1 НА СКЛАД" : (S.pause.c ? "НА ПАУЗЕ" :
-   (S.store.length >= STORE_MAX - 1 ? "МЕСТО ОСТАВЛЕНО ТЕБЕ" :
+   (S.store.length >= storeMax() - keepFree(storeMax()) ? "МЕСТО ОСТАВЛЕНО ТЕБЕ" :
    (botCrateIdx() >= 0 ? "ЧИСТИТ" : (S.crate.length ? "ЦЕННОЕ ОТЛОЖЕНО ТЕБЕ" : "ЖДЁТ НАХОДКУ"))));
  var mLeft = Math.max(0, MGR_CAP - S.mgrSold);
  var mTxt = fm ? "ПРОДАЛ" : (S.pause.m ? "НА ПАУЗЕ" :
@@ -2869,9 +3364,11 @@ document.addEventListener("pointerdown", function(e){
 
 /* Пока идёт тутор, выбор лунки не показываем: коуч указывает на яму, и список
    карточек в этот момент только сбивает. Берём первую доступную. */
+/* Лунку за игрока выбирает только тутор, и только до шага про выбор лунки.
+   Дальше пустой слот означает «иди в меню лунок», а не «на тебе следующую». */
 function ensureHole(){
  if(S.hole >= 0 && curHole()){ if(!dSite) newSite(); return; }
- if(S.tut >= TUT.length) return;
+ if(pickOpen || S.tut >= HOLE_STEP) return;
  var l = holes(), lv = upLv("dig");
  for(var i = 0; i < 3; i++) if(l[i] && l[i].req <= lv){ S.hole = i; newSite(); return; }
 }
@@ -2904,7 +3401,7 @@ function sync(){
   metaR.style.color = cItem ? qualColor(cQual) : "var(--ink-dim)";
  }else if(screen === "shop"){
   metaL.textContent = "ЛАВКА · " + L.n;
-  metaR.textContent = "ВИТРИНА " + S.shelf.length + "/" + SHELF_MAX;
+  metaR.textContent = "ВИТРИНА " + S.shelf.length + "/" + shelfMax();
  }else if(screen === "album"){
   metaL.textContent = "АЛЬБОМ · " + L.n;
   metaR.textContent = "СОБРАНО " + albumCount(S.loc) + "/" + ART[S.loc].length;
@@ -2914,7 +3411,7 @@ function sync(){
  }
  if(screen !== "clean") metaR.style.color = "var(--hud)";
 
- if(S.tut < TUT.length && (!curHole() || !dSite)) ensureHole();
+ if(S.tut < HOLE_STEP && (!curHole() || !dSite)) ensureHole();
  var picking = pickOpen || !curHole() || !dSite;
  document.getElementById("scDig").classList.toggle("pick", picking);
  if(screen === "dig" && picking) paintHoles();
@@ -2942,7 +3439,7 @@ function sync(){
  if(screen === "clean") paintCrate();
  var ccta = document.getElementById("clnCta");
  if(!cItem){ ccta.disabled = true; ccta.textContent = "ЯЩИК ПУСТ"; ccta.classList.remove("can"); }
- else if(S.store.length >= STORE_MAX){ ccta.disabled = true; ccta.textContent = "СКЛАД ПОЛОН"; ccta.classList.remove("can"); }
+ else if(S.store.length >= storeMax()){ ccta.disabled = true; ccta.textContent = "СКЛАД ПОЛОН"; ccta.classList.remove("can"); }
  else if(cp >= 1){ ccta.disabled = false; ccta.textContent = "НА СКЛАД"; ccta.classList.add("can"); }
  else{ ccta.disabled = true; ccta.textContent = "КОРКА " + Math.round(cp * 100) + "%"; ccta.classList.remove("can"); }
 
