@@ -1,0 +1,3027 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Раскопки — MVP V3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<script>try{ if(window.top !== window.self) document.documentElement.className = "embed"; }catch(e){ document.documentElement.className = "embed"; }</script>
+<style>
+:root{
+  --bg:#0d0b09; --panel:#16110c; --line:#6d5a3c; --line-dim:#3d3324;
+  --ink:#d8c9ab; --ink-hi:#e8d6ae; --ink-dim:#9c8763; --ink-off:#6f5d42;
+  --hud:#9fe08a; --gold:#c9a14a; --warn:#c4622e;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;overflow:hidden}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'VT323',ui-monospace,'Courier New',monospace;
+  -webkit-font-smoothing:none; overflow:hidden;
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  display:flex; align-items:stretch; justify-content:center;
+  height:100vh; height:100dvh;
+}
+@supports (height:100dvh){ body{height:100dvh} }
+#app{width:100%;max-width:420px;height:100%;max-height:100%;overflow:hidden;display:flex;flex-direction:column;gap:8px;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 14px calc(10px + env(safe-area-inset-bottom,0px));position:relative}
+.row{display:flex;align-items:center;gap:8px}
+.btn{font:inherit;cursor:pointer;color:var(--ink);background:var(--panel);border:1px solid var(--line)}
+.btn:active{background:#221a12}
+.btn[disabled]{cursor:default;color:var(--ink-off);border-color:var(--line-dim)}
+.btn.can{border-color:var(--hud);color:var(--hud)}
+.small{font-size:19px;line-height:1.15;color:var(--ink-dim)}
+.chip{border:1px solid var(--line);background:var(--panel);padding:8px 10px;line-height:1}
+
+#top{display:flex;align-items:center;gap:8px}
+#coinBox{flex-grow:1;display:flex;align-items:center;gap:8px}
+#coins{font-size:23px;line-height:1;color:var(--ink-hi)}
+#rate{margin-left:auto;font-size:18px;line-height:1;color:var(--ink-dim)}
+#sound{width:42px;height:37px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+
+#meta{display:flex;align-items:baseline;justify-content:space-between}
+#goal{display:none;align-items:baseline;justify-content:space-between;gap:8px;
+  font-size:18px;line-height:1;color:var(--ink-dim)}
+#goal.on{display:flex}
+#goalT{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#goalR{color:var(--gold);flex:0 0 auto}
+#ev{display:none;position:absolute;left:14px;right:14px;z-index:45;
+  bottom:calc(122px + env(safe-area-inset-bottom,0px));
+  border:1px solid var(--hud);background:var(--panel);color:var(--hud);
+  padding:9px 12px;font-size:20px;letter-spacing:1px;cursor:default}
+#ev.on{display:block}
+#ev.cat{cursor:pointer;animation:blip 1.1s infinite}
+#evRow{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+#evT{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#evX{flex:0 0 auto}
+#evBar{height:5px;border:1px solid var(--line-dim);margin-top:6px}
+#evBar > i{display:block;height:100%;background:var(--hud);width:100%}
+#crewBtn{display:none;width:42px;height:37px;align-items:center;justify-content:center}
+#crewBtn.on{display:flex}
+#crewBtn.alert{border-color:var(--hud);color:var(--hud)}
+#crewPanel{display:none;position:absolute;z-index:30;right:14px;
+  top:calc(58px + env(safe-area-inset-top,0px));width:min(300px,calc(100% - 28px));
+  border:1px solid var(--line);background:var(--panel);padding:10px;
+  flex-direction:column;gap:9px}
+#crewPanel.on{display:flex}
+.crow{display:flex;flex-direction:column;gap:4px;font-size:18px;line-height:1.1;color:var(--ink-dim)}
+.crow.hit{color:var(--hud)}
+.crow .ct{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.cwbar{height:6px;border:1px solid var(--line-dim);background:var(--bg);overflow:hidden}
+.cwbar > i{display:block;height:100%;background:var(--ink-dim);width:0}
+.crow.hit .cwbar > i{background:var(--hud)}
+#crewPanel .btn{height:40px;font-size:17px;letter-spacing:1px}
+
+.screen{flex:1 1 auto;min-height:0;display:none;flex-direction:column;gap:8px}
+.screen.on{display:flex}
+
+.pit{position:relative;flex:1 1 auto;min-height:150px;border:1px solid var(--line);
+  background:#1d1610;touch-action:none;overflow:hidden;cursor:crosshair}
+.pit canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.fx{position:absolute;inset:0;pointer-events:none}
+.fx.dither{background-image:
+  linear-gradient(45deg,rgba(0,0,0,.30) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.30) 75%),
+  linear-gradient(45deg,rgba(0,0,0,.30) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.30) 75%);
+  background-size:4px 4px;background-position:0 0,2px 2px}
+.fx.scan{background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,.30) 0 1px,rgba(0,0,0,0) 1px 3px)}
+.fx.vig{box-shadow:inset 0 0 80px 26px rgba(13,11,9,.92)}
+.tag{position:absolute;left:8px;top:8px;padding:4px 8px;font-size:18px;line-height:1.1;
+  color:var(--ink-dim);background:rgba(13,11,9,.78);border:1px solid var(--line-dim);pointer-events:none}
+.tag.warn{color:var(--warn);top:auto;bottom:8px}
+
+.meter{height:12px;border:1px solid var(--line);background:var(--panel);overflow:hidden}
+.meter > i{display:block;height:100%;background:var(--hud);width:0}
+.cta{width:100%;height:52px;font-size:26px;letter-spacing:2px;line-height:1}
+.half{flex-grow:1;height:52px;font-size:23px;letter-spacing:2px;line-height:1}
+
+#slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.slot{border:1px solid var(--line-dim);background:var(--panel);padding:8px 6px;min-height:104px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
+.slot.full{border-color:var(--line)}
+.slot .sn{font-size:16px;line-height:1.05;color:var(--ink-hi)}
+.slot .sq{font-size:16px;line-height:1}
+.slot .empty{font-size:15px;line-height:1.1;color:var(--ink-dim)}
+.sh{font-size:14px;line-height:1;color:var(--ink-off);letter-spacing:1px}
+.sh.by{color:var(--hud)}
+
+#storeWrap{display:flex;flex-direction:column;gap:5px}
+#store{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.si{flex:0 0 auto;width:74px;border:1px solid var(--line-dim);background:var(--panel);
+  padding:5px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  font:inherit;color:var(--ink);cursor:pointer;text-align:center}
+.si.can{border-color:var(--hud)}
+.si .sn{font-size:14px;line-height:1.05;color:var(--ink-hi)}
+.si .sq{font-size:14px;line-height:1}
+.si.empty{justify-content:center;color:var(--ink-dim);font-size:14px;cursor:default}
+
+#deals{flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.offer{border:1px solid var(--line);background:var(--panel);padding:10px;
+  display:flex;flex-direction:column;gap:8px}
+.offer.none{border-color:var(--line-dim)}
+.oh{display:flex;align-items:center;gap:8px;cursor:pointer}
+.oh .on{flex:1 1 auto;min-width:0;font-size:17px;letter-spacing:1px;color:var(--hud)}
+.oh .oc{font-size:19px;color:var(--gold)}
+.oh .ot{width:22px;text-align:center;font-size:22px;line-height:1;color:var(--ink-dim);
+  border:1px solid var(--line-dim)}
+.ob{display:flex;flex-direction:column;gap:8px}
+.offer.min .ob{display:none}
+.of{width:50px;flex:0 0 auto}
+.ol{font-size:20px;line-height:1.2;color:var(--ink-hi)}
+.orow{border-top:1px solid var(--line-dim);padding-top:8px;display:flex;align-items:baseline;justify-content:space-between}
+.ofor{font-size:19px;color:var(--ink-dim)}
+.osum{font-size:28px;line-height:1;color:var(--gold)}
+.onote{font-size:16px;line-height:1.25;color:var(--ink-dim)}
+.offer .half{height:46px;font-size:20px}
+
+#mapList{flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.loc{border:1px solid var(--line-dim);background:var(--panel);padding:10px;display:flex;gap:10px;align-items:center}
+.loc.here{border-color:var(--hud)}
+.loc.ready{border-color:var(--gold)}
+.loc .g{flex-grow:1;min-width:0}
+.loc .ln{font-size:21px;line-height:1.1;color:var(--ink-hi)}
+.loc .ls{font-size:17px;line-height:1.2;color:var(--ink-dim)}
+.loc button{width:104px;min-height:46px;font-size:18px;padding:4px 6px;line-height:1.1}
+.bar{height:7px;border:1px solid var(--line-dim);margin-top:5px}
+.bar > i{display:block;height:100%;background:var(--gold);width:0}
+.hire{display:flex;gap:8px;margin-top:8px}
+.hire button{flex-grow:1;height:46px;font-size:18px;line-height:1.1}
+#reset{width:100%;height:44px;margin-top:4px;font-size:17px;letter-spacing:1px;
+  color:var(--ink-dim);border-color:var(--line-dim)}
+#reset.arm{color:var(--warn);border-color:var(--warn)}
+
+#nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#nav .btn{height:44px;font-size:17px;letter-spacing:1px}
+#nav .btn.on{border-color:var(--hud);color:var(--hud)}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.6}}
+#nav .btn.alert{border-color:var(--hud);color:var(--hud);animation:blip 1s infinite}
+
+#coach{position:absolute;inset:0;z-index:40;display:none;pointer-events:none}
+#coach.on{display:block}
+#cmask{position:absolute;inset:0;background:rgba(6,5,4,.80);pointer-events:auto;display:none}
+#coach.hard #cmask{display:block}
+.cup{position:relative;z-index:41}
+#cring{position:absolute;z-index:42;display:none;border:2px solid var(--hud);pointer-events:none;animation:pulse 1.25s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#chand{position:absolute;z-index:42;width:26px;height:26px;margin:-13px 0 0 -13px;border:2px solid var(--hud);
+  border-radius:50%;background:rgba(159,224,138,.18);pointer-events:none;display:none;
+  animation:swipe 2s ease-in-out infinite}
+@keyframes swipe{0%{transform:translate(0,0);opacity:0}12%{opacity:1}
+  50%{transform:translate(120px,44px);opacity:1}88%{opacity:.4}100%{transform:translate(0,0);opacity:0}}
+#cbub{position:absolute;z-index:43;left:10px;right:10px;border:1px solid var(--hud);background:#12100c;
+  padding:12px;display:none;gap:10px;align-items:flex-start;pointer-events:auto}
+#cbub.on{display:flex}
+#cname{font-size:17px;line-height:1;letter-spacing:1px;color:var(--hud);margin-bottom:5px}
+#ctxt{font-size:20px;line-height:1.2;color:var(--ink-hi)}
+#chint{font-size:17px;line-height:1.2;color:var(--ink-dim);margin-top:5px}
+
+#holePick{display:none;flex:1 1 auto;min-height:0;overflow:auto;flex-direction:column;gap:7px}
+#scDig.pick #holePick{display:flex}
+#scDig.pick #digPit, #scDig.pick .digWork, #scDig.pick #digCta{display:none}
+.hcard{border:1px solid var(--line-dim);background:var(--panel);padding:8px;
+  display:flex;flex-direction:column;gap:6px}
+.hcard.ad{border-color:var(--gold)}
+.hcard.lock{opacity:.6}
+.hrow{display:flex;gap:8px;align-items:stretch}
+.hstrip{width:26px;flex:0 0 auto;display:flex;flex-direction:column;border:1px solid var(--line-dim)}
+.hstrip > i{flex:1;display:block}
+.hinfo{min-width:0;flex-grow:1}
+.hn{font-size:21px;line-height:1;color:var(--ink-hi);letter-spacing:1px;
+  display:flex;justify-content:space-between;gap:8px}
+.hn > i{font-style:normal;font-size:16px;color:var(--ink-off)}
+.hn > i.gold{color:var(--gold)}
+.hs{font-size:16px;line-height:1.15;color:var(--ink-dim);margin-top:2px}
+.hl{font-size:16px;line-height:1;color:var(--ink-off);margin-top:4px}
+.hodds{font-size:16px;line-height:1;margin-top:4px;color:var(--ink-off)}
+.hodds b{font-weight:normal;color:var(--ink-hi)}
+.hodds b.gold{color:var(--gold)}
+.hreq{font-size:16px;line-height:1;margin-top:4px;color:var(--hud)}
+.hreq.no{color:var(--warn)}
+.hsw{font-size:17px;line-height:1;letter-spacing:1px;padding:6px 10px;margin:0 8px 0 auto;
+  flex:0 0 auto;white-space:nowrap}
+.hbtns{display:flex;gap:6px}
+.hbtns .btn{flex:1;height:38px;font-size:18px;letter-spacing:1px}
+#digSkid{display:none;left:8px;right:8px;top:auto;bottom:8px;color:var(--warn);
+  border-color:var(--warn);text-align:center}
+#digSkid.on{display:block}
+#crateRow{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.cr.set{border-color:var(--hud)}
+.cr.set .crn{color:var(--hud)}
+.cr{flex:0 0 auto;width:66px;border:1px solid var(--line-dim);background:var(--panel);padding:4px 3px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;color:var(--ink-dim);
+  cursor:pointer;text-align:center}
+.cr.on{border-color:var(--hud);color:var(--hud)}
+.cr .crn{font-size:12px;line-height:1.05}
+.cbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#crewPanel .cbtn{height:34px;font-size:13px;letter-spacing:0;padding:0}
+#crewPanel .cbtn.on{border-color:var(--hud);color:var(--hud)}
+#crewPanel .cpause{width:100%;height:34px;font-size:14px;letter-spacing:0}
+#crewPanel .cpause.off{color:var(--warn);border-color:var(--warn)}
+#clnHold, #digHold{display:none;left:auto;right:8px;color:var(--hud);border-color:var(--hud)}
+#digHold{top:auto;bottom:8px}
+#clnHold.on, #digHold.on{display:block}
+#nav.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+#nav.five .btn{font-size:14px;letter-spacing:0}
+#navAlbum{display:none}
+#nav.five #navAlbum{display:block}
+
+.alNote{grid-column:1/-1;font-size:15px;line-height:1.25;color:var(--ink-dim);
+  border:1px solid var(--line-dim);padding:7px 8px}
+#albumGrid{flex:1 1 auto;min-height:0;overflow:auto;display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start}
+.alHead{grid-column:1/-1;font-size:17px;letter-spacing:1px;color:var(--ink-dim);
+  border-bottom:1px solid var(--line-dim);padding-bottom:4px;margin-top:2px}
+.alHead b{font-weight:normal;color:var(--hud)}
+.ac{border:1px solid var(--line-dim);background:var(--panel);padding:8px;
+  display:flex;gap:8px;align-items:center;min-height:60px}
+.ac.have{border-color:var(--hud)}
+.ac .an{font-size:16px;line-height:1.1;color:var(--ink-hi)}
+.ac .as{font-size:14px;line-height:1.2;color:var(--ink-dim);margin-top:3px}
+.ac.miss .an{color:var(--ink-dim)}
+.ac.miss svg{opacity:.25}
+
+.siw{flex:0 0 auto;display:flex;flex-direction:column;gap:4px}
+.siw .si{width:74px}
+.donate{width:74px;height:30px;font-size:13px;line-height:1;letter-spacing:0;
+  padding:0;border-color:var(--hud);color:var(--hud)}
+
+#toast{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);border:1px solid var(--hud);
+  background:var(--panel);color:var(--hud);padding:10px 16px;font-size:24px;letter-spacing:1px;
+  pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;white-space:pre-line;z-index:50}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="top">
+    <div class="chip row" id="coinBox">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><polygon points="8,1 15,8 8,15 1,8" fill="#c9a14a"></polygon><polygon points="8,4 12,8 8,12 4,8" fill="#f0d489"></polygon></svg>
+      <span id="coins">0</span>
+      <span id="rate"></span>
+    </div>
+    <button class="btn" id="crewBtn" type="button" aria-label="Бригада">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 5h12M3 9h12M3 13h12"></path></svg>
+    </button>
+    <button class="btn" id="sound" type="button" aria-label="Звук">
+      <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h3l4-3v10l-4-3H3z"></path><path id="wave" d="M12.5 6.5a3.5 3.5 0 010 5"></path></svg>
+    </button>
+  </div>
+
+  <div id="meta">
+    <span class="small" id="metaL">—</span>
+    <span class="small" id="metaR" style="color:var(--hud)"></span>
+  </div>
+
+  <div id="goal"><span id="goalT">—</span><span id="goalR"></span></div>
+
+  <div id="crewPanel"></div>
+
+  <div id="ev"><div id="evRow"><span id="evT"></span><span id="evX"></span></div><div id="evBar"><i></i></div></div>
+
+  <div class="screen on" id="scDig">
+    <div id="holePick"></div>
+    <div class="pit" id="digPit">
+      <canvas id="digUnder"></canvas>
+      <canvas id="digDirt"></canvas>
+      <canvas id="digFx"></canvas>
+      <div class="fx dither"></div><div class="fx scan"></div><div class="fx vig"></div>
+      <div class="tag" id="digTag">УЧАСТОК НЕ ТРОНУТ</div>
+      <div class="tag" id="digHold">КОПАТЕЛЬ НА ПАУЗЕ</div>
+      <div class="tag skid" id="digSkid">ЛОПАТА СКОЛЬЗИТ</div>
+    </div>
+    <div class="digWork">
+      <div class="row" style="justify-content:space-between;margin-bottom:5px">
+        <span class="small" id="digName">—</span>
+        <button class="btn hsw" id="holeBtn" type="button">ЛУНКИ</button>
+        <span class="small" id="digPct">0%</span>
+      </div>
+      <div class="meter"><i id="digBar"></i></div>
+    </div>
+    <button class="btn cta" id="digCta" type="button" disabled>ОТКОПАНО 0%</button>
+  </div>
+
+  <div class="screen" id="scClean">
+    <div id="crateRow"></div>
+    <div class="pit" id="clnPit">
+      <canvas id="clnUnder"></canvas>
+      <canvas id="clnCrust"></canvas>
+      <canvas id="clnFx"></canvas>
+      <div class="fx dither"></div><div class="fx scan"></div><div class="fx vig"></div>
+      <div class="tag" id="clnHold">ЧИСТИЛЬЩИК НА ПАУЗЕ</div>
+      <div class="tag warn" id="clnWarn">ОРАНЖЕВОЕ — ХРУПКО, ВЕДИ МЕДЛЕННО</div>
+    </div>
+    <div>
+      <div class="row" style="justify-content:space-between;margin-bottom:5px">
+        <span class="small" id="clnName">—</span>
+        <span class="small" id="clnPct">0%</span>
+      </div>
+      <div class="meter"><i id="clnBar"></i></div>
+    </div>
+    <button class="btn cta" id="clnCta" type="button" disabled>КОРКА 0%</button>
+  </div>
+
+  <div class="screen" id="scShop">
+    <div id="slots"></div>
+    <div id="storeWrap">
+      <div class="row" style="justify-content:space-between">
+        <span class="small">СКЛАД · ЖМИ, ЧТОБЫ ВЫСТАВИТЬ</span>
+        <span class="small" id="storeN">0/5</span>
+      </div>
+      <div id="store"></div>
+    </div>
+    <div id="deals"></div>
+  </div>
+
+  <div class="screen" id="scMap">
+    <div id="mapList"></div>
+  </div>
+
+  <div class="screen" id="scAlbum">
+    <div id="albumGrid"></div>
+  </div>
+
+  <div id="nav">
+    <button class="btn on" id="navDig" type="button">РАСКОП</button>
+    <button class="btn" id="navClean" type="button">ЧИСТКА</button>
+    <button class="btn" id="navShop" type="button">ЛАВКА</button>
+    <button class="btn" id="navMap" type="button">КАРТА</button>
+    <button class="btn" id="navAlbum" type="button">АЛЬБОМ</button>
+  </div>
+
+  <div id="coach"><div id="cmask"></div></div>
+  <div id="cring"></div>
+  <div id="chand"></div>
+  <div id="cbub">
+    <svg width="46" height="46" viewBox="0 0 40 40" aria-hidden="true" style="flex:0 0 auto">
+      <polygon points="10,16 20,4 30,16 20,13" fill="#8a6a3f"></polygon>
+      <polygon points="4,16 20,7 36,16 32,18 20,12 8,18" fill="#6b5332"></polygon>
+      <polygon points="11,17 29,17 28,27 20,33 12,27" fill="#d8b089"></polygon>
+      <polygon points="11,17 20,17 20,33 12,27" fill="#e8c7a2"></polygon>
+      <polygon points="13,21 18,21 18,25 13,25" fill="#2b2118"></polygon>
+      <polygon points="22,21 27,21 27,25 22,25" fill="#2b2118"></polygon>
+      <polygon points="18,22 22,22 22,23 18,23" fill="#2b2118"></polygon>
+      <polygon points="14,28 26,28 24,36 20,39 16,36" fill="#cfc7b4"></polygon>
+    </svg>
+    <div>
+      <div id="cname">ПРОФЕССОР ВЕЙЛАНД</div>
+      <div id="ctxt">—</div>
+      <div id="chint"></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- данные ---------- */
+
+var LOC = [
+ {id:"egypt", n:"ЕГИПЕТ", pal:["#a8894e","#8f7340","#6f5931"], layers:["ПЕСОК","НАНОС","ИЗВЕСТНЯК"],
+  hard:1.0, mult:1, digger:500, cleaner:1200, mgr:2500, travel:3000, passive:80, open:0,
+  waveMin:8000, waveMax:40000},
+ {id:"mongolia", n:"МОНГОЛИЯ", pal:["#7a6242","#63503a","#4a3c2c"], layers:["СТЕПЬ","ГЛИНА","ПЕСЧАНИК"],
+  hard:1.4, mult:1.2, digger:2000, cleaner:4500, mgr:9000, travel:12000, passive:260, open:3000,
+  waveMin:8000, waveMax:40000},
+ {id:"antarctica", n:"АНТАРКТИДА", pal:["#6f7f88","#586770","#3f4c55"], layers:["ФИРН","ЛЁД","МЁРЗЛОТА"],
+  hard:1.8, mult:1.5, digger:7000, cleaner:15000, mgr:30000, travel:0, passive:0, open:12000,
+  waveMin:6000, waveMax:30000}
+];
+
+var ART = [
+ [ {n:"СКАРАБЕЙ",r:1,v:60,p:[
+    {c:"#8a6a32",g:[[.50,.08],[.62,.20],[.58,.34],[.42,.34],[.38,.20]]},
+    {c:"#a3803c",g:[[.36,.32],[.64,.32],[.72,.52],[.66,.78],[.50,.90],[.34,.78],[.28,.52]]},
+    {c:"#c49a4a",g:[[.36,.32],[.50,.32],[.50,.90],[.34,.78],[.28,.52]]},
+    {c:"#8a6a32",g:[[.28,.44],[.12,.36],[.10,.52],[.26,.58]]},
+    {c:"#8a6a32",g:[[.72,.44],[.88,.36],[.90,.52],[.74,.58]]},
+    {c:"#2b2118",g:[[.44,.17],[.48,.17],[.48,.24],[.44,.24]]},
+    {c:"#2b2118",g:[[.52,.17],[.56,.17],[.56,.24],[.52,.24]]}]},
+   {n:"АМФОРА",r:2,v:90,p:[
+    {c:"#a06f2f",g:[[.34,.02],[.66,.02],[.66,.12],[.34,.12]]},
+    {c:"#c08a4a",g:[[.40,.12],[.60,.12],[.62,.28],[.38,.28]]},
+    {c:"#b5803c",g:[[.38,.28],[.62,.28],[.80,.52],[.72,.88],[.28,.88],[.20,.52]]},
+    {c:"#ddab63",g:[[.42,.34],[.53,.32],[.49,.66],[.38,.64]]}]},
+   {n:"КАНОПА",r:2,v:110,p:[
+    {c:"#c9bb98",g:[[.36,.04],[.64,.04],[.66,.24],[.34,.24]]},
+    {c:"#e8dcb8",g:[[.36,.04],[.50,.04],[.50,.24],[.34,.24]]},
+    {c:"#2b2118",g:[[.40,.10],[.46,.10],[.46,.16],[.40,.16]]},
+    {c:"#2b2118",g:[[.54,.10],[.60,.10],[.60,.16],[.54,.16]]},
+    {c:"#b09a6f",g:[[.30,.26],[.70,.26],[.74,.62],[.70,.94],[.30,.94],[.26,.62]]},
+    {c:"#c9bb98",g:[[.30,.26],[.50,.26],[.50,.94],[.30,.94],[.26,.62]]}]},
+   {n:"ЗОЛОТАЯ МАСКА",r:3,v:180,p:[
+    {c:"#c9a14a",g:[[.20,.14],[.80,.14],[.88,.50],[.70,.88],[.30,.88],[.12,.50]]},
+    {c:"#e8c169",g:[[.20,.14],[.50,.14],[.45,.87],[.30,.88],[.12,.50]]},
+    {c:"#3a2c18",g:[[.28,.38],[.44,.34],[.42,.46],[.28,.48]]},
+    {c:"#3a2c18",g:[[.56,.34],[.72,.38],[.72,.48],[.58,.46]]},
+    {c:"#7a5b2c",g:[[.40,.62],[.60,.62],[.56,.72],[.44,.72]]}]},
+   {n:"УШЕБТИ",r:3,v:260,p:[
+    {c:"#6a6a8a",g:[[.36,.10],[.64,.10],[.68,.28],[.32,.28]]},
+    {c:"#c9bb98",g:[[.42,.13],[.58,.13],[.58,.30],[.42,.30]]},
+    {c:"#2b2118",g:[[.44,.19],[.49,.19],[.49,.23],[.44,.23]]},
+    {c:"#2b2118",g:[[.51,.19],[.56,.19],[.56,.23],[.51,.23]]},
+    {c:"#b09a6f",g:[[.34,.28],[.66,.28],[.70,.60],[.66,.92],[.34,.92],[.30,.60]]},
+    {c:"#c9bb98",g:[[.34,.28],[.50,.28],[.50,.92],[.34,.92],[.30,.60]]},
+    {c:"#8a7a5a",g:[[.36,.52],[.64,.52],[.64,.58],[.36,.58]]}]},
+   {n:"ПАПИРУС",r:3,v:300,p:[
+    {c:"#d8c79a",g:[[.14,.22],[.86,.22],[.86,.78],[.14,.78]]},
+    {c:"#e8dcb8",g:[[.14,.22],[.50,.22],[.50,.78],[.14,.78]]},
+    {c:"#a08a5a",g:[[.08,.18],[.20,.18],[.20,.82],[.08,.82]]},
+    {c:"#a08a5a",g:[[.80,.18],[.92,.18],[.92,.82],[.80,.82]]},
+    {c:"#6b5332",g:[[.28,.34],[.72,.34],[.72,.38],[.28,.38]]},
+    {c:"#6b5332",g:[[.28,.46],[.64,.46],[.64,.50],[.28,.50]]},
+    {c:"#6b5332",g:[[.28,.58],[.70,.58],[.70,.62],[.28,.62]]}]},
+   {n:"СТАТУЭТКА БАСТЕТ",r:3,v:340,p:[
+    {c:"#3a3038",g:[[.38,.12],[.44,.02],[.50,.14]]},
+    {c:"#3a3038",g:[[.54,.14],[.60,.02],[.66,.12]]},
+    {c:"#574a54",g:[[.38,.10],[.66,.10],[.66,.26],[.38,.26]]},
+    {c:"#c9a14a",g:[[.44,.16],[.49,.16],[.49,.21],[.44,.21]]},
+    {c:"#c9a14a",g:[[.55,.16],[.60,.16],[.60,.21],[.55,.21]]},
+    {c:"#3a3038",g:[[.40,.26],[.64,.26],[.70,.64],[.72,.86],[.32,.86],[.34,.64]]},
+    {c:"#574a54",g:[[.40,.26],[.52,.26],[.52,.86],[.32,.86],[.34,.64]]},
+    {c:"#8a6a32",g:[[.24,.86],[.80,.86],[.80,.96],[.24,.96]]}]},
+   {n:"АЛЕБАСТРОВЫЙ СОСУД",r:3,v:420,p:[
+    {c:"#e8dcb8",g:[[.36,.08],[.64,.08],[.62,.18],[.38,.18]]},
+    {c:"#c9bb98",g:[[.30,.18],[.70,.18],[.82,.46],[.74,.84],[.26,.84],[.18,.46]]},
+    {c:"#f2e7c8",g:[[.30,.18],[.50,.18],[.50,.84],[.26,.84],[.18,.46]]},
+    {c:"#a08a5a",g:[[.32,.50],[.68,.50],[.68,.56],[.32,.56]]},
+    {c:"#b09a6f",g:[[.34,.86],[.66,.86],[.62,.96],[.38,.96]]}]},
+
+   {n:"САРКОФАГ",r:5,v:900,p:[
+    {c:"#c9a14a",g:[[.32,.06],[.68,.06],[.78,.26],[.80,.72],[.66,.96],[.34,.96],[.20,.72],[.22,.26]]},
+    {c:"#e8c169",g:[[.32,.06],[.50,.06],[.50,.96],[.34,.96],[.20,.72],[.22,.26]]},
+    {c:"#e8dcb8",g:[[.40,.16],[.60,.16],[.62,.36],[.38,.36]]},
+    {c:"#2b2118",g:[[.43,.23],[.48,.23],[.48,.27],[.43,.27]]},
+    {c:"#2b2118",g:[[.52,.23],[.57,.23],[.57,.27],[.52,.27]]},
+    {c:"#7a5b2c",g:[[.30,.46],[.70,.46],[.70,.52],[.30,.52]]},
+    {c:"#7a5b2c",g:[[.30,.60],[.70,.60],[.70,.66],[.30,.66]]},
+    {c:"#7a5b2c",g:[[.30,.74],[.70,.74],[.70,.80],[.30,.80]]}]},
+   {n:"СОЛНЕЧНАЯ ЛАДЬЯ",r:5,v:1100,p:[
+    {c:"#8a6a32",g:[[.08,.62],[.92,.62],[.80,.84],[.20,.84]]},
+    {c:"#a3803c",g:[[.08,.62],[.50,.62],[.50,.84],[.20,.84]]},
+    {c:"#8a6a32",g:[[.04,.60],[.12,.38],[.19,.41],[.15,.62]]},
+    {c:"#8a6a32",g:[[.96,.60],[.88,.38],[.81,.41],[.85,.62]]},
+    {c:"#6b5332",g:[[.47,.26],[.53,.26],[.53,.62],[.47,.62]]},
+    {c:"#e8c169",g:[[.50,.04],[.63,.13],[.63,.27],[.50,.36],[.37,.27],[.37,.13]]},
+    {c:"#f0d489",g:[[.50,.04],[.63,.13],[.50,.20],[.37,.13]]}]},
+   {n:"ГЛАЗ ГОРА",r:5,v:1300,p:[
+    {c:"#2b2118",g:[[.16,.24],[.60,.14],[.84,.22],[.82,.30],[.58,.22],[.20,.32]]},
+    {c:"#e8dcb8",g:[[.18,.44],[.42,.34],[.70,.38],[.84,.48],[.58,.58],[.30,.56]]},
+    {c:"#2b2118",g:[[.40,.40],[.54,.40],[.56,.52],[.42,.54]]},
+    {c:"#2b2118",g:[[.32,.58],[.42,.58],[.40,.86],[.28,.84]]},
+    {c:"#2b2118",g:[[.56,.58],[.74,.60],[.88,.76],[.72,.72],[.60,.64]]}]},
+   {n:"ЗОЛОТОЙ АНХ",r:5,v:1600,p:[
+    {c:"#c9a14a",g:[[.36,.04],[.64,.04],[.72,.18],[.64,.32],[.36,.32],[.28,.18]]},
+    {c:"#2a2018",g:[[.44,.12],[.56,.12],[.60,.18],[.56,.24],[.44,.24],[.40,.18]]},
+    {c:"#c9a14a",g:[[.14,.36],[.86,.36],[.86,.48],[.14,.48]]},
+    {c:"#c9a14a",g:[[.42,.36],[.58,.36],[.58,.96],[.42,.96]]},
+    {c:"#e8c169",g:[[.42,.36],[.50,.36],[.50,.96],[.42,.96]]},
+    {c:"#e8c169",g:[[.14,.36],[.42,.36],[.42,.42],[.14,.42]]}]} ],
+
+ [ {n:"КОГОТЬ",r:1,v:180,p:[
+    {c:"#ded0ad",g:[[.20,.86],[.26,.50],[.44,.22],[.68,.08],[.80,.20],[.60,.32],[.44,.52],[.38,.88]]},
+    {c:"#f2e7c8",g:[[.44,.22],[.68,.08],[.72,.18],[.50,.30]]},
+    {c:"#b3a382",g:[[.20,.86],[.38,.88],[.36,.96],[.18,.94]]}]},
+   {n:"БРОНЗОВОЕ ЗЕРКАЛО",r:2,v:300,p:[
+    {c:"#8a6a32",g:[[.50,.06],[.78,.20],[.86,.48],[.70,.72],[.30,.72],[.14,.48],[.22,.20]]},
+    {c:"#c49a4a",g:[[.50,.06],[.78,.20],[.66,.32],[.40,.24]]},
+    {c:"#6f5528",g:[[.44,.72],[.56,.72],[.56,.96],[.44,.96]]},
+    {c:"#a3803c",g:[[.36,.34],[.64,.34],[.64,.50],[.36,.50]]}]},
+   {n:"ЯЙЦО ДИНОЗАВРА",r:2,v:280,p:[
+    {c:"#8a7a56",g:[[.30,.16],[.50,.06],[.70,.16],[.82,.50],[.70,.86],[.30,.86],[.18,.50]]},
+    {c:"#a89972",g:[[.30,.16],[.50,.06],[.56,.34],[.34,.40]]},
+    {c:"#5c5038",g:[[.44,.34],[.54,.42],[.46,.52],[.56,.62],[.46,.74]]}]},
+   {n:"ЧЕРЕП ЯЩЕРА",r:3,v:420,p:[
+    {c:"#e6dcc0",g:[[.16,.30],[.62,.18],[.86,.34],[.84,.56],[.60,.72],[.20,.66]]},
+    {c:"#f2e7c8",g:[[.16,.30],[.62,.18],[.58,.34],[.20,.44]]},
+    {c:"#2b2118",g:[[.56,.32],[.70,.30],[.70,.42],[.56,.44]]},
+    {c:"#c9bb98",g:[[.20,.66],[.60,.72],[.58,.84],[.24,.80]]},
+    {c:"#f2e7c8",g:[[.28,.80],[.34,.80],[.34,.92],[.28,.92]]},
+    {c:"#f2e7c8",g:[[.44,.82],[.50,.82],[.50,.94],[.44,.94]]}]},
+   {n:"НАКОНЕЧНИК СТРЕЛЫ",r:3,v:700,p:[
+    {c:"#8a8a7a",g:[[.50,.04],[.72,.46],[.62,.56],[.50,.50],[.38,.56],[.28,.46]]},
+    {c:"#b0b0a0",g:[[.50,.04],[.50,.50],[.38,.56],[.28,.46]]},
+    {c:"#6b6257",g:[[.45,.56],[.55,.56],[.54,.94],[.46,.94]]}]},
+   {n:"КОСТЯНОЙ ГРЕБЕНЬ",r:3,v:800,p:[
+    {c:"#ded0ad",g:[[.12,.14],[.88,.14],[.88,.42],[.12,.42]]},
+    {c:"#f2e7c8",g:[[.12,.14],[.50,.14],[.50,.42],[.12,.42]]},
+    {c:"#b3a382",g:[[.20,.22],[.80,.22],[.80,.28],[.20,.28]]},
+    {c:"#ded0ad",g:[[.16,.42],[.24,.42],[.23,.88],[.17,.88]]},
+    {c:"#ded0ad",g:[[.30,.42],[.38,.42],[.37,.88],[.31,.88]]},
+    {c:"#ded0ad",g:[[.44,.42],[.52,.42],[.51,.88],[.45,.88]]},
+    {c:"#ded0ad",g:[[.58,.42],[.66,.42],[.65,.88],[.59,.88]]},
+    {c:"#ded0ad",g:[[.72,.42],[.80,.42],[.79,.88],[.73,.88]]}]},
+   {n:"ЗУБ ТАРБОЗАВРА",r:3,v:900,p:[
+    {c:"#f2e7c8",g:[[.40,.04],[.56,.16],[.66,.50],[.60,.88],[.36,.92],[.34,.56]]},
+    {c:"#ded0ad",g:[[.56,.16],[.66,.50],[.60,.88],[.48,.90],[.50,.40]]},
+    {c:"#b3a382",g:[[.34,.56],[.44,.60],[.42,.90],[.36,.92]]}]},
+   {n:"ГЛИНЯНЫЙ КОНЬ",r:3,v:1100,p:[
+    {c:"#a06f2f",g:[[.24,.40],[.62,.38],[.72,.46],[.70,.62],[.26,.64],[.18,.52]]},
+    {c:"#a06f2f",g:[[.62,.38],[.72,.20],[.88,.16],[.92,.26],[.78,.34],[.74,.46]]},
+    {c:"#6b5332",g:[[.64,.34],[.74,.18],[.80,.20],[.70,.40]]},
+    {c:"#8a5a28",g:[[.28,.62],[.36,.62],[.34,.92],[.26,.92]]},
+    {c:"#8a5a28",g:[[.58,.62],[.66,.62],[.66,.92],[.58,.92]]},
+    {c:"#6b5332",g:[[.18,.44],[.08,.58],[.10,.80],[.20,.62]]}]},
+
+   {n:"ЗОЛОТАЯ ПАЙЦЗА",r:5,v:2200,p:[
+    {c:"#c9a14a",g:[[.30,.06],[.70,.06],[.76,.20],[.76,.84],[.60,.96],[.40,.96],[.24,.84],[.24,.20]]},
+    {c:"#e8c169",g:[[.30,.06],[.50,.06],[.50,.96],[.40,.96],[.24,.84],[.24,.20]]},
+    {c:"#2a2018",g:[[.46,.12],[.54,.12],[.54,.20],[.46,.20]]},
+    {c:"#7a5b2c",g:[[.32,.34],[.68,.34],[.68,.40],[.32,.40]]},
+    {c:"#7a5b2c",g:[[.32,.50],[.68,.50],[.68,.56],[.32,.56]]},
+    {c:"#7a5b2c",g:[[.32,.66],[.60,.66],[.60,.72],[.32,.72]]}]},
+   {n:"ШЛЕМ ВОИНА",r:5,v:2600,p:[
+    {c:"#c9a14a",g:[[.46,.02],[.54,.02],[.54,.12],[.46,.12]]},
+    {c:"#7a6a52",g:[[.50,.08],[.72,.20],[.80,.48],[.76,.62],[.24,.62],[.20,.48],[.28,.20]]},
+    {c:"#9a8a6a",g:[[.50,.08],[.50,.62],[.24,.62],[.20,.48],[.28,.20]]},
+    {c:"#5a4a32",g:[[.18,.62],[.82,.62],[.82,.72],[.18,.72]]},
+    {c:"#5a4a32",g:[[.46,.62],[.54,.62],[.54,.92],[.46,.92]]}]},
+   {n:"ЯНТАРЬ С НАСЕКОМЫМ",r:5,v:3000,p:[
+    {c:"#c46b2e",g:[[.30,.10],[.66,.06],[.86,.34],[.80,.72],[.52,.92],[.24,.76],[.16,.40]]},
+    {c:"#e8a04a",g:[[.30,.10],[.52,.08],[.46,.90],[.24,.76],[.16,.40]]},
+    {c:"#2b2118",g:[[.46,.38],[.56,.38],[.58,.62],[.46,.64]]},
+    {c:"#2b2118",g:[[.34,.42],[.46,.44],[.46,.49],[.32,.50]]},
+    {c:"#2b2118",g:[[.58,.44],[.70,.42],[.72,.50],[.58,.49]]},
+    {c:"#2b2118",g:[[.48,.30],[.55,.30],[.55,.38],[.48,.38]]}]},
+   {n:"ГНЕЗДО ЯИЦ",r:5,v:3600,p:[
+    {c:"#6b5332",g:[[.08,.62],[.92,.62],[.84,.92],[.16,.92]]},
+    {c:"#a89972",g:[[.26,.44],[.36,.38],[.44,.46],[.42,.64],[.28,.64],[.22,.54]]},
+    {c:"#c9bb98",g:[[.46,.34],[.56,.30],[.64,.42],[.62,.64],[.48,.64],[.42,.50]]},
+    {c:"#a89972",g:[[.64,.44],[.74,.40],[.80,.50],[.78,.64],[.64,.64],[.60,.52]]},
+    {c:"#5c4a2c",g:[[.08,.62],[.92,.62],[.92,.68],[.08,.68]]}]} ],
+
+ [ {n:"ЛЕДЯНОЙ КЕРН",r:1,v:600,p:[
+    {c:"#a9d6e5",g:[[.38,.06],[.62,.06],[.62,.94],[.38,.94]]},
+    {c:"#d6f0f7",g:[[.38,.06],[.50,.06],[.50,.94],[.38,.94]]},
+    {c:"#7fb3c7",g:[[.38,.34],[.62,.34],[.62,.40],[.38,.40]]},
+    {c:"#7fb3c7",g:[[.38,.62],[.62,.62],[.62,.68],[.38,.68]]}]},
+   {n:"БИВЕНЬ МАМОНТА",r:2,v:900,p:[
+    {c:"#ded0ad",g:[[.10,.86],[.16,.52],[.34,.26],[.58,.16],[.80,.26],[.86,.48],[.66,.42],[.44,.46],[.30,.64],[.26,.88]]},
+    {c:"#f2e7c8",g:[[.34,.26],[.58,.16],[.63,.29],[.41,.37]]},
+    {c:"#b3a382",g:[[.10,.86],[.26,.88],[.23,.97],[.08,.94]]}]},
+   {n:"ВМЁРЗШИЙ ИДОЛ",r:3,v:1200,p:[
+    {c:"#7fb3c7",g:[[.22,.10],[.78,.10],[.82,.92],[.18,.92]]},
+    {c:"#a9d6e5",g:[[.22,.10],[.50,.10],[.50,.92],[.18,.92]]},
+    {c:"#6b6257",g:[[.34,.24],[.66,.24],[.70,.86],[.30,.86]]},
+    {c:"#2b2118",g:[[.40,.34],[.47,.34],[.47,.42],[.40,.42]]},
+    {c:"#2b2118",g:[[.53,.34],[.60,.34],[.60,.42],[.53,.42]]},
+    {c:"#2b2118",g:[[.42,.50],[.58,.50],[.56,.56],[.44,.56]]}]},
+   {n:"МЕТЕОРИТ",r:3,v:1400,p:[
+    {c:"#3a3038",g:[[.18,.30],[.44,.10],[.76,.18],[.90,.48],[.70,.84],[.34,.88],[.10,.60]]},
+    {c:"#574a54",g:[[.44,.10],[.76,.18],[.62,.40],[.38,.34]]},
+    {c:"#c46b2e",g:[[.28,.52],[.52,.44],[.62,.62],[.40,.72]]}]},
+   {n:"КОМПАС ЭКСПЕДИЦИИ",r:3,v:2200,p:[
+    {c:"#8a7a56",g:[[.44,.02],[.56,.02],[.56,.10],[.44,.10]]},
+    {c:"#8a7a56",g:[[.50,.06],[.76,.18],[.88,.46],[.78,.76],[.50,.92],[.22,.76],[.12,.46],[.24,.18]]},
+    {c:"#e8dcb8",g:[[.50,.16],[.70,.26],[.78,.48],[.68,.72],[.50,.82],[.32,.72],[.22,.48],[.30,.26]]},
+    {c:"#c46b2e",g:[[.50,.22],[.56,.50],[.50,.46],[.44,.50]]},
+    {c:"#3a3038",g:[[.50,.46],[.56,.50],[.50,.76],[.44,.50]]},
+    {c:"#6b5332",g:[[.47,.44],[.53,.44],[.53,.52],[.47,.52]]}]},
+   {n:"ЖЕСТЯНКА С ПАЙКОМ",r:3,v:2600,p:[
+    {c:"#58676f",g:[[.18,.10],[.82,.10],[.82,.22],[.18,.22]]},
+    {c:"#6f7f88",g:[[.22,.18],[.78,.18],[.78,.88],[.22,.88]]},
+    {c:"#93a4ad",g:[[.22,.18],[.44,.18],[.44,.88],[.22,.88]]},
+    {c:"#c9bb98",g:[[.22,.42],[.78,.42],[.78,.62],[.22,.62]]},
+    {c:"#6b5332",g:[[.28,.48],[.72,.48],[.72,.52],[.28,.52]]},
+    {c:"#6b5332",g:[[.28,.55],[.62,.55],[.62,.58],[.28,.58]]}]},
+   {n:"ОКАМЕНЕЛЫЙ ПАПОРОТНИК",r:3,v:3000,p:[
+    {c:"#6b6257",g:[[.10,.10],[.88,.14],[.90,.86],[.14,.90]]},
+    {c:"#8a8276",g:[[.10,.10],[.50,.12],[.52,.88],[.14,.90]]},
+    {c:"#3a4a3a",g:[[.46,.16],[.52,.16],[.56,.84],[.48,.84]]},
+    {c:"#3a4a3a",g:[[.46,.26],[.28,.22],[.30,.30],[.47,.34]]},
+    {c:"#3a4a3a",g:[[.52,.30],[.70,.26],[.70,.34],[.53,.38]]},
+    {c:"#3a4a3a",g:[[.48,.46],[.30,.42],[.32,.50],[.49,.54]]},
+    {c:"#3a4a3a",g:[[.53,.50],[.72,.46],[.72,.54],[.54,.58]]},
+    {c:"#3a4a3a",g:[[.50,.66],[.34,.62],[.36,.70],[.51,.74]]}]},
+   {n:"ЗУБ ПЛЕЗИОЗАВРА",r:3,v:3600,p:[
+    {c:"#ded0ad",g:[[.44,.04],[.58,.20],[.64,.56],[.58,.90],[.40,.90],[.36,.52]]},
+    {c:"#f2e7c8",g:[[.44,.04],[.50,.30],[.48,.90],[.40,.90],[.36,.52]]},
+    {c:"#b3a382",g:[[.52,.26],[.57,.28],[.58,.86],[.52,.86]]}]},
+
+   {n:"ОБЕЛИСК ВО ЛЬДУ",r:5,v:7000,p:[
+    {c:"#7fb3c7",g:[[.14,.10],[.86,.06],[.90,.90],[.10,.94]]},
+    {c:"#a9d6e5",g:[[.14,.10],[.48,.08],[.46,.92],[.10,.94]]},
+    {c:"#3a3038",g:[[.44,.18],[.56,.18],[.60,.80],[.40,.80]]},
+    {c:"#574a54",g:[[.44,.18],[.50,.08],[.56,.18]]},
+    {c:"#c9a14a",g:[[.46,.34],[.54,.34],[.54,.39],[.46,.39]]},
+    {c:"#c9a14a",g:[[.46,.50],[.55,.50],[.55,.55],[.46,.55]]},
+    {c:"#c9a14a",g:[[.45,.66],[.56,.66],[.56,.71],[.45,.71]]}]},
+   {n:"КОРАБЕЛЬНЫЙ КОЛОКОЛ",r:5,v:8000,p:[
+    {c:"#8a6a32",g:[[.44,.04],[.56,.04],[.56,.16],[.44,.16]]},
+    {c:"#a3803c",g:[[.36,.16],[.64,.16],[.76,.52],[.82,.78],[.18,.78],[.24,.52]]},
+    {c:"#c49a4a",g:[[.36,.16],[.50,.16],[.50,.78],[.18,.78],[.24,.52]]},
+    {c:"#6f5528",g:[[.16,.78],[.84,.78],[.84,.86],[.16,.86]]},
+    {c:"#6f5528",g:[[.46,.86],[.54,.86],[.54,.96],[.46,.96]]}]},
+   {n:"ЧЕРЕП КИТА",r:5,v:9000,p:[
+    {c:"#e6dcc0",g:[[.06,.40],[.34,.28],[.66,.26],[.92,.36],[.94,.56],[.60,.62],[.30,.60],[.08,.54]]},
+    {c:"#f2e7c8",g:[[.06,.40],[.34,.28],[.36,.58],[.08,.54]]},
+    {c:"#2b2118",g:[[.62,.38],[.76,.36],[.76,.48],[.62,.48]]},
+    {c:"#c9bb98",g:[[.12,.60],[.88,.58],[.86,.76],[.16,.78]]},
+    {c:"#b3a382",g:[[.12,.60],[.46,.59],[.46,.77],[.16,.78]]}]},
+   {n:"ЗВЁЗДНАЯ КАРТА",r:5,v:11000,p:[
+    {c:"#ded0ad",g:[[.12,.16],[.88,.12],[.90,.84],[.10,.88]]},
+    {c:"#f2e7c8",g:[[.12,.16],[.50,.14],[.50,.86],[.10,.88]]},
+    {c:"#6b5332",g:[[.22,.30],[.66,.24],[.67,.28],[.23,.34]]},
+    {c:"#6b5332",g:[[.30,.66],[.74,.58],[.75,.62],[.31,.70]]},
+    {c:"#2b2118",g:[[.20,.28],[.26,.28],[.26,.34],[.20,.34]]},
+    {c:"#2b2118",g:[[.62,.22],[.68,.22],[.68,.28],[.62,.28]]},
+    {c:"#2b2118",g:[[.40,.44],[.46,.44],[.46,.50],[.40,.50]]},
+    {c:"#2b2118",g:[[.28,.64],[.34,.64],[.34,.70],[.28,.70]]},
+    {c:"#2b2118",g:[[.70,.56],[.76,.56],[.76,.62],[.70,.62]]}]} ]
+];
+
+var BUYERS = [
+ {n:"ТУРИСТ",   m:0.70, min:0,    face:"#8a7a56", line:"Сувенир для дочки. Столько дам."},
+ {n:"МУЗЕЙ",    m:1.00, min:0.40, face:"#4a5a6a", line:"Экспонат нам подойдёт. Оформим."},
+ {n:"КОЛЛЕКЦИОНЕР", m:1.60, min:0.70, face:"#5a4a6a", line:"Состояние приличное. Беру."},
+ {n:"ПЕРЕКУПЩИК", m:0.50, min:0,  face:"#6a5a3a", line:"Вопросов не задаю. Быстро и дёшево."}
+];
+
+var CRATE_MAX = 3, SHELF_MAX = 3, STORE_MAX = 5, PASSIVE_CAP_MIN = 30;
+
+/* Инструмент покупает время и запас хода, но не качество. Сохранность остаётся
+   единственным навыком в игре: её нельзя купить, иначе коллекция собирается
+   кошельком. Прокачка общая, не по локациям — иначе переезд обнуляет слив. */
+var UP = [
+ {k:"dig",   n:"ЛОПАТА",       d:"Быстрее снимает грунт.",                         max:5, base:300, g:2.6},
+ {k:"brush", n:"ЩЁТКА",        d:"Быстрее снимает корку. На 4 уровне шире захват — и больше хрупких клеток за мах.", max:5, base:400, g:2.6},
+ {k:"hand",  n:"ТВЁРДАЯ РУКА", d:"Больше запас скорости до скола. Замедляться на оранжевом всё равно придётся.", max:5, base:600, g:2.6}
+];
+function upLv(k){ return (S.up && S.up[k]) || 0; }
+function upCost(k){
+ for(var i = 0; i < UP.length; i++) if(UP[i].k === k)
+  return Math.round(UP[i].base * Math.pow(UP[i].g, upLv(k)));
+ return 0;
+}
+function digDmg(){ return 1.5 + 0.3 * upLv("dig"); }
+function brushDmg(){ return 1.6 + 0.2 * upLv("brush"); }
+function brushRad(){ return upLv("brush") >= 4 ? 2 : 1; }
+function fastLim(){ return 1.0 + 0.12 * upLv("hand"); }
+/* Менеджер закрывает не больше MGR_CAP сделок за минуту. Всё сверх лимита ждёт
+   игрока и уходит по своему таймеру: полная автоматизация оставляла пустой экран
+   и ни одной причины на него смотреть. Потеря денег тут и есть смысл лимита. */
+var MGR_CAP = 4, MGR_WIN = 60000;
+
+/* ---------- состояние ---------- */
+
+var S = {
+ coins:0, loc:0, unlocked:[1,0,0],
+ digger:[0,0,0], cleaner:[0,0,0], manager:[0,0,0], mgrMode:0, left:[0,0,0], bank:[0,0,0],
+ mgrSold:0, mgrWin:0, up:{dig:0, brush:0, hand:0}, firstFind:0, tutBuy:0,
+ holes:[[],[],[]], hole:-1, botHole:-1, adAt:0, adFinds:0,
+ crate:[], store:[], shelf:[], sold:0, tut:0, seen:{}, sound:true, uid:1, t:0,
+ goal:[0,0,0], goalOpen:[0,0,0], digLoc:[0,0,0], soldLoc:[0,0,0], perfect:[0,0,0],
+ album:[[],[],[]], pity:0, sets:[], uniqGift:0,
+ pause:{d:0, c:0, m:0}, clnAll:0, mgrTier:[1,1,0], clnPick:0
+};
+
+function load(){
+ try{
+  var raw = localStorage.getItem("dig.v5");
+  if(raw){ var o = JSON.parse(raw); for(var k in S) if(o[k] !== undefined) S[k] = o[k]; }
+ }catch(e){}
+}
+function save(){ try{ S.t = Date.now(); localStorage.setItem("dig.v5", JSON.stringify(S)); }catch(e){} }
+load();
+(function(){
+ var lists = [S.store, S.shelf, S.crate];
+ for(var k = 0; k < lists.length; k++)
+  for(var i = 0; i < lists[k].length; i++)
+   if(lists[k][i].u === undefined) lists[k][i].u = S.uid++;
+})();
+
+/* ---------- породы, пласты, лунки ---------- */
+
+/* res вычитается из урона лопаты, hp множит прочность клетки, req — уровень
+   лопаты, ниже которого слой практически не берётся. */
+var MAT = {
+ sand: {n:"ПЕСОК",     res:0.0, hp:1.00, req:0, pal:["#a8894e","#967943","#8f7340"],
+        snd:{f:105, r:45, w:"square",   v:0.018, d:0.045}},
+ clay: {n:"ГЛИНА",     res:0.5, hp:1.35, req:0, pal:["#8a6c44","#775c3a","#654e31"],
+        snd:{f:78,  r:26, w:"triangle", v:0.026, d:0.065}},
+ lime: {n:"ИЗВЕСТНЯК", res:1.0, hp:1.80, req:1, pal:["#9a9078","#847b66","#6b6354"],
+        snd:{f:168, r:60, w:"sawtooth", v:0.020, d:0.040}},
+ stone:{n:"ПЕСЧАНИК",  res:1.6, hp:2.40, req:3, pal:["#7e6a52","#6a5945","#564737"],
+        snd:{f:132, r:40, w:"sawtooth", v:0.025, d:0.055}},
+ gran: {n:"ГРАНИТ",    res:2.2, hp:3.20, req:4, pal:["#6f6a66","#5b5754","#474442"],
+        snd:{f:68,  r:18, w:"square",   v:0.032, d:0.075}}
+};
+/* Чем дальше локация, тем твёрже её породы: лопата становится пропуском. */
+var LOC_MATS = [["sand","clay","lime"], ["clay","lime","stone"], ["lime","stone","gran"]];
+var POOL_N = {cer:"КЕРАМИКА", met:"МЕТАЛЛ", bone:"КОСТЬ", rock:"КАМЕНЬ", org:"ОРГАНИКА"};
+
+/* Материал находки. Пласт лунки втрое повышает вес своего материала внутри
+   выпавшего яруса — так игрок может идти за конкретной вещью для альбома. */
+var ART_MAT = {
+ "СКАРАБЕЙ":"rock", "АМФОРА":"cer", "КАНОПА":"cer", "ЗОЛОТАЯ МАСКА":"met",
+ "УШЕБТИ":"cer", "ПАПИРУС":"org", "СТАТУЭТКА БАСТЕТ":"met", "АЛЕБАСТРОВЫЙ СОСУД":"rock",
+ "САРКОФАГ":"rock", "СОЛНЕЧНАЯ ЛАДЬЯ":"org", "ГЛАЗ ГОРА":"cer", "ЗОЛОТОЙ АНХ":"met",
+ "КОГОТЬ":"bone", "БРОНЗОВОЕ ЗЕРКАЛО":"met", "ЯЙЦО ДИНОЗАВРА":"bone", "ЧЕРЕП ЯЩЕРА":"bone",
+ "НАКОНЕЧНИК СТРЕЛЫ":"met", "КОСТЯНОЙ ГРЕБЕНЬ":"bone", "ЗУБ ТАРБОЗАВРА":"bone",
+ "ГЛИНЯНЫЙ КОНЬ":"cer", "ЗОЛОТАЯ ПАЙЦЗА":"met", "ШЛЕМ ВОИНА":"met",
+ "ЯНТАРЬ С НАСЕКОМЫМ":"org", "ГНЕЗДО ЯИЦ":"bone",
+ "ЛЕДЯНОЙ КЕРН":"rock", "БИВЕНЬ МАМОНТА":"bone", "ВМЁРЗШИЙ ИДОЛ":"rock", "МЕТЕОРИТ":"rock",
+ "КОМПАС ЭКСПЕДИЦИИ":"met", "ЖЕСТЯНКА С ПАЙКОМ":"met", "ОКАМЕНЕЛЫЙ ПАПОРОТНИК":"org",
+ "ЗУБ ПЛЕЗИОЗАВРА":"bone", "ОБЕЛИСК ВО ЛЬДУ":"rock", "КОРАБЕЛЬНЫЙ КОЛОКОЛ":"met",
+ "ЧЕРЕП КИТА":"bone", "ЗВЁЗДНАЯ КАРТА":"org"
+};
+(function(){
+ for(var r = 0; r < ART.length; r++)
+  for(var i = 0; i < ART[r].length; i++) ART[r][i].m = ART_MAT[ART[r][i].n] || "rock";
+})();
+
+var HOLE_T = [
+ {k:"easy", s:"Мелко и мягко.",             mats:[0,1], finds:4, odds:[0.97,0.03,0.00],
+  nn:["ОСЫПЬ","ПРОМОИНА","ТРАНШЕЯ"]},
+ {k:"mid",  s:"Кто-то копал тут до тебя.",  mats:[0,1,2], finds:3, odds:[0.73,0.25,0.02],
+  nn:["СТАРЫЙ ШУРФ","ЗАСЫПАННЫЙ ЛАЗ","КРАЙ КЛАДКИ"]},
+ {k:"hard", s:"Долго, тяжело, поэтому туда и не лазили.", mats:[1,2,1,2], finds:3, odds:[0.45,0.45,0.10],
+  nn:["ПОД ПЛИТОЙ","ГЛУБОКИЙ ОТВАЛ","ЗАВАЛ"]},
+ {k:"ad",   s:"Шансы лучше всех. Но это шанс, а не обещание.", mats:[0,1,2], finds:3,
+  odds:[0.30,0.55,0.15], nn:["СЛУХ О ТАЙНИКЕ"]}
+];
+var BREAK = 0.90, AD_COOL = 20 * 60000, AD_FINDS = 8;
+
+function typeOf(k){ for(var i = 0; i < HOLE_T.length; i++) if(HOLE_T[i].k === k) return HOLE_T[i]; return HOLE_T[0]; }
+function holeReq(h){
+ var r = 0;
+ for(var i = 0; i < h.mats.length; i++) r = Math.max(r, MAT[h.mats[i]].req);
+ return r;
+}
+function poolsAt(r){
+ var seen = {}, out = [];
+ for(var i = 0; i < ART[r].length; i++){ var m = ART[r][i].m; if(!seen[m]){ seen[m] = 1; out.push(m); } }
+ return out;
+}
+function takenNames(r){
+ var out = [], l = S.holes[r] || [];
+ for(var i = 0; i < l.length; i++) if(l[i]) out.push(l[i].n);
+ return out;
+}
+function makeHole(k, r){
+ var t = typeOf(k), mats = [], pool = poolsAt(r), set = LOC_MATS[r];
+ for(var i = 0; i < t.mats.length; i++){
+  var mi = t.mats[i];
+  /* Два одинаковых слоя подряд читаются как «ничего не изменилось»: после
+     снятия листа порода обязана смениться и цветом, и на ощупь. */
+  if(mats.length && set[mi] === mats[mats.length - 1]) mi = (mi + 1) % set.length;
+  mats.push(set[mi]);
+ }
+ /* Две лунки с одинаковым именем в одном списке читаются как ошибка. */
+ var taken = takenNames(r), nn = [];
+ for(var j = 0; j < t.nn.length; j++) if(taken.indexOf(t.nn[j]) < 0) nn.push(t.nn[j]);
+ if(!nn.length) nn = t.nn;
+ var h = {t:t.k, n:nn[Math.floor(Math.random() * nn.length)], s:t.s,
+          mats:mats, pool:pool[Math.floor(Math.random() * pool.length)],
+          left:t.finds, odds:t.odds.slice()};
+ h.req = holeReq(h);
+ return h;
+}
+/* Хотя бы одна обычная лунка всегда по зубам текущей лопате: без этой страховки
+   прогресс может запереться, а платить за лопату будет нечем. */
+function ensureEasy(r){
+ var list = S.holes[r], lv = upLv("dig"), ok = false;
+ for(var i = 0; i < 3; i++) if(list[i] && list[i].req <= lv) ok = true;
+ if(!ok) list[0] = makeHole("easy", r);
+}
+function rollType(){
+ var x = Math.random();
+ return x < 0.42 ? "easy" : (x < 0.78 ? "mid" : "hard");
+}
+function genHoles(r){
+ S.holes[r] = [];
+ S.holes[r].push(makeHole("easy", r));
+ S.holes[r].push(makeHole("mid", r));
+ S.holes[r].push(makeHole(rollType(), r));
+ S.holes[r].push(null);
+ ensureEasy(r);
+}
+/* Таблицы пород объявлены ниже сейва, поэтому лунки поднимаем не при загрузке,
+   а в общем старте — иначе genHoles читает ещё не созданные LOC_MATS. */
+function initHoles(){
+ if(!S.holes || S.holes.length !== LOC.length) S.holes = [[], [], []];
+ for(var r = 0; r < LOC.length; r++){
+  if(!S.holes[r] || !S.holes[r].length) genHoles(r);
+  else ensureEasy(r);
+ }
+}
+function holes(){ return S.holes[S.loc]; }
+function curHole(){ var l = holes(); return S.hole >= 0 && l ? l[S.hole] : null; }
+function adReady(){ return Date.now() >= (S.adAt || 0) || (S.adFinds || 0) >= AD_FINDS; }
+
+function loc(){ return LOC[S.loc]; }
+function arts(){ return ART[S.loc]; }
+
+/* ---------- звук ---------- */
+
+var AC = null;
+function beep(f, d, type, vol){
+ if(!S.sound) return;
+ try{
+  if(!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  if(AC.state === "suspended") AC.resume();
+  var o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || "square"; o.frequency.value = f;
+  g.gain.value = vol || 0.03;
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + d);
+  o.connect(g); g.connect(AC.destination);
+  o.start(); o.stop(AC.currentTime + d);
+ }catch(e){}
+}
+function no(){ beep(120, .09, "sawtooth", .03); }
+
+function fmt(n){
+ n = Math.floor(n);
+ if(n < 10000) return String(n);
+ if(n < 1e6) return (n / 1e3).toFixed(1) + "К";
+ return (n / 1e6).toFixed(2) + "М";
+}
+function toast(t){
+ var el = document.getElementById("toast");
+ el.textContent = t; el.classList.add("on");
+ clearTimeout(el._t);
+ el._t = setTimeout(function(){ el.classList.remove("on"); }, 1200);
+}
+function poly(ctx, pts, x, y, w, h, color){
+ ctx.fillStyle = color; ctx.beginPath();
+ for(var i = 0; i < pts.length; i++){
+  var px = x + pts[i][0] * w, py = y + pts[i][1] * h;
+  if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+ }
+ ctx.closePath(); ctx.fill();
+}
+function svgOf(a, size, flat){
+ var s = '<svg viewBox="0 0 1 1" width="' + size + '" height="' + size + '" aria-hidden="true">';
+ for(var i = 0; i < a.p.length; i++){
+  s += '<polygon points="' + a.p[i].g.map(function(q){ return q[0] + "," + q[1]; }).join(" ") +
+       '" fill="' + (flat || a.p[i].c) + '"></polygon>';
+ }
+ return s + "</svg>";
+}
+function qualMult(q){ return q >= 0.999 ? 2.0 : (q >= 0.70 ? 1.0 : (q >= 0.40 ? 0.6 : 0.25)); }
+
+/* ---------- коллекция ----------
+   Экспонат — находка, очищенная до 100%. Наёмник доводит вещь до 50–85% и этой
+   планки не берёт никогда, поэтому альбом заполняется только ручной игрой.
+   Отдельный флаг «кто копал» не нужен: качество и есть правило. */
+var TIER_N = 4, TIERS = 3;
+var TIER_NAME = ["РЯДОВЫЕ", "РЕДКИЕ", "УНИКАЛЬНЫЕ"];
+var TIER_W = [0.60, 0.32, 0.08];      /* шансы выпадения по ярусам */
+var SET_MULT  = [1.25, 1.6, 2.5];     /* надбавка к цене продажи за собранный ярус */
+var SET_SALES = [10, 25, 50];         /* на сколько продаж её хватает */
+var PITY = 50;                        /* идеальных чисток до гарантированной уникальной */
+
+function tierOf(i){ return Math.floor(i / TIER_N); }
+function albumCount(r){
+ var n = 0;
+ for(var i = 0; i < ART[r].length; i++) if(S.album[r][i]) n++;
+ return n;
+}
+function albumTier(r, t){
+ var n = 0;
+ for(var i = t * TIER_N; i < (t + 1) * TIER_N && i < ART[r].length; i++) if(S.album[r][i]) n++;
+ return n;
+}
+function albumFull(r){ return albumCount(r) >= ART[r].length; }
+
+/* ---------- собранный ярус: заряд на продажи ----------
+   Коллекция не вечная. Собранная четвёрка даёт надбавку к цене, отрабатывает
+   свои продажи и сгорает вместе с вещами: ярус приходится собирать заново.
+   Пока активны несколько, тратится сначала самая дорогая. */
+function setOf(r, t){
+ for(var i = 0; i < S.sets.length; i++) if(S.sets[i].r === r && S.sets[i].t === t) return S.sets[i];
+ return null;
+}
+function bestSet(){
+ var b = null;
+ for(var i = 0; i < S.sets.length; i++) if(!b || S.sets[i].t > b.t) b = S.sets[i];
+ return b;
+}
+function saleMult(){ var b = bestSet(); return b ? SET_MULT[b.t] : 1; }
+function armSet(r, t){
+ if(setOf(r, t) || albumTier(r, t) < TIER_N) return null;
+ var x = {r:r, t:t, left:SET_SALES[t]};
+ S.sets.push(x);
+ return x;
+}
+function spendSet(){
+ var b = bestSet();
+ if(!b) return;
+ b.left--;
+ if(b.left > 0) return;
+ for(var i = b.t * TIER_N; i < (b.t + 1) * TIER_N && i < ART[b.r].length; i++) S.album[b.r][i] = 0;
+ for(var k = S.sets.length - 1; k >= 0; k--) if(S.sets[k] === b) S.sets.splice(k, 1);
+ toast(TIER_NAME[b.t] + " · " + LOC[b.r].n + "\nКОЛЛЕКЦИЯ ОТРАБОТАЛА\nСОБИРАЙ ЗАНОВО");
+}
+
+/* Пока игрок не нанял копателя и чистильщика, из земли идут только рядовые вещи:
+   редкое приходит вместе с подсказкой про альбом, а не раньше неё. */
+function crewReady(){ return !!(S.digger[S.loc] && S.cleaner[S.loc]) || S.loc > 0 || S.tut >= TUT.length; }
+
+/* Что лежит в новом участке. Уникальные редки, но счётчик жалости не даёт
+   им пропасть навсегда: он считает идеальные чистки, то есть растёт только
+   от ручной игры, а не от скорости копания. */
+function pickTier(){
+ var h = curHole(), w = h ? h.odds : TIER_W;
+ var x = Math.random(), a = 0;
+ for(var t = 0; t < TIERS; t++){ a += w[t]; if(x < a) return t; }
+ return 0;
+}
+/* Пласт лунки не меняет ярус, он меняет, какая именно вещь яруса выпадет. */
+function pickInTier(from, n){
+ var h = curHole(), list = arts(), w = [], sum = 0;
+ for(var i = 0; i < n; i++){
+  var k = (h && list[from + i] && list[from + i].m === h.pool) ? 3 : 1;
+  w.push(k); sum += k;
+ }
+ var x = Math.random() * sum, a = 0;
+ for(var j = 0; j < n; j++){ a += w[j]; if(x < a) return from + j; }
+ return from;
+}
+/* Уникальные, которых ещё нет в альбоме. Гарантия выдаёт именно их:
+   дубликат не двигает коллекцию и гарантию бы обесценил. */
+function missingUnique(){
+ var out = [], from = (TIERS - 1) * TIER_N, list = ART[S.loc];
+ for(var i = from; i < Math.min(list.length, from + TIER_N); i++) if(!S.album[S.loc][i]) out.push(i);
+ return out;
+}
+function pickIdx(){
+ var list = ART[S.loc], commonN = Math.min(TIER_N, list.length);
+ /* Первая находка в игре жёстко зафиксирована: дешёвый скарабей. Продажа за него
+    не должна сразу окупать копателя, иначе игрок проскакивает весь ручной цикл. */
+ if(!S.firstFind && S.loc === 0) return 0;
+ /* Одну уникальную вещь выдаём ещё в туторе: к моменту, когда откроется альбом,
+    у игрока уже лежит то, ради чего он открывается. */
+ if(!S.uniqGift && crewReady()){
+  var g = missingUnique();
+  if(g.length){ S.uniqGift = 1; S.pity = 0; return g[Math.floor(Math.random() * g.length)]; }
+ }
+ if(!albumOn()) return Math.floor(Math.random() * commonN);
+ if(S.pity >= PITY){
+  var m = missingUnique();
+  if(m.length){ S.pity = 0; return m[Math.floor(Math.random() * m.length)]; }
+ }
+ var t = pickTier(), from = t * TIER_N;
+ var n = Math.min(TIER_N, list.length - from);
+ if(n <= 0){ t = 0; from = 0; n = commonN; }
+ var i2 = pickInTier(from, n);
+ if(t === TIERS - 1 && !S.album[S.loc][i2]) S.pity = 0;
+ return i2;
+}
+/* Наёмный копатель приносит только рядовые вещи: редкое и уникальное
+   достаётся тому, кто копает сам. */
+function botIdx(){ return Math.floor(Math.random() * Math.min(TIER_N, arts().length)); }
+/* Наёмник разбирает ящик подряд и сам. Дойдя до ценной вещи, он её не портит,
+   а откладывает: своими руками он даёт 50–85%, а экспонат для альбома — это 100%.
+   Метка «отложено» и есть опознание: на раскопе про находку не известно ничего,
+   а профессионал, взяв её в руки, говорит, что она не по его части.
+   Тумблер «чистить всё подряд» снимает запрет целиком, вместе с коллекцией. */
+function botCrateIdx(){
+ for(var i = 0; i < S.crate.length; i++){
+  var it = S.crate[i];
+  /* Находку, которую игрок выбрал себе, наёмник не забирает. */
+  if(it.u === S.clnPick) continue;
+  if(it.aside && !S.clnAll) continue;
+  return i;
+ }
+ return -1;
+}
+function botSkips(it){ return !S.clnAll && tierOf(it.i) > 0; }
+function mgrStoreIdx(){
+ for(var i = 0; i < S.store.length; i++) if(S.mgrTier[tierOf(S.store[i].i)]) return i;
+ return -1;
+}
+function passiveOf(r){ return LOC[r].passive; }
+function isExhibit(it){ return it.q >= 0.999; }
+function canDonate(it){ return albumOn() && isExhibit(it) && !S.album[it.loc][it.i]; }
+/* Альбом появляется только после туторных шагов про него: до этого на экране
+   нет ни вкладки, ни кнопки сдачи, и объяснять нечего. */
+function albumOn(){ return !!S.seen.album || S.tut >= ALBUM_END; }
+function qualColor(q){ return q >= 0.999 ? "var(--hud)" : (q >= 0.70 ? "var(--ink-hi)" : (q >= 0.40 ? "var(--gold)" : "var(--warn)")); }
+
+/* ---------- экраны ---------- */
+
+var screen = "dig";
+var SCR = {dig:"scDig", clean:"scClean", shop:"scShop", map:"scMap", album:"scAlbum"};
+var NAV = {dig:"navDig", clean:"navClean", shop:"navShop", map:"navMap", album:"navAlbum"};
+
+function show(k){
+ screen = k;
+ S.seen[k] = 1;
+ for(var i in SCR) document.getElementById(SCR[i]).classList.toggle("on", i === k);
+ for(var j in NAV) document.getElementById(NAV[j]).classList.toggle("on", j === k);
+ if(k === "clean") ensureClean();
+ if(k === "shop") paintShop();
+ if(k === "map") paintMap();
+ if(k === "album"){ S.seen.albumOpen = 1; paintAlbum(); }
+ resizeAll(); save(); sync();
+}
+for(var nk in NAV)(function(k){ document.getElementById(NAV[k]).onclick = function(){ show(k); }; })(nk);
+
+/* ---------- общий ввод ---------- */
+
+function bindStroke(el, step, onHit){
+ var down = false, last = null, acc = 0;
+ function pt(e){ var r = el.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top, Date.now()]; }
+ el.addEventListener("pointerdown", function(e){
+  down = true; el.setPointerCapture(e.pointerId);
+  last = pt(e); acc = 0; onHit(last[0], last[1], 0); e.preventDefault();
+ });
+ el.addEventListener("pointermove", function(e){
+  if(!down) return;
+  var p = pt(e), dx = p[0] - last[0], dy = p[1] - last[1];
+  var dist = Math.sqrt(dx * dx + dy * dy), dt = Math.max(1, p[2] - last[2]);
+  var speed = dist / dt;
+  acc += dist;
+  var n = Math.floor(acc / step);
+  if(n > 0){
+   acc -= n * step; n = Math.min(n, 12);
+   for(var k = 1; k <= n; k++) onHit(last[0] + dx * (k / n), last[1] + dy * (k / n), speed);
+  }
+  last = p; e.preventDefault();
+ });
+ ["pointerup","pointercancel","pointerleave"].forEach(function(ev){
+  el.addEventListener(ev, function(){ down = false; last = null; });
+ });
+}
+
+/* ---------- эффекты ----------
+
+   Раскоп и чистка ощущаются по-разному, поэтому и сыплется из них разное:
+   из породы летят осколки её же цвета, с чисткой поднимается медленная пыль.
+   Частицы живут на отдельном холсте поверх грунта и гаснут сами. */
+
+var dParts = [], cParts = [], fxRaf = 0;
+function fxStart(){ if(!fxRaf) fxRaf = requestAnimationFrame(fxFrame); }
+function fxFrame(){
+ fxRaf = 0;
+ var now = Date.now();
+ if(dParts.length || dxFDirty){ fxDraw(dxF, dParts, dW, dH, now); dxFDirty = dParts.length > 0; }
+ if(cParts.length || cxFDirty){ fxDraw(cxF, cParts, cW, cH, now); cxFDirty = cParts.length > 0; }
+ if(dParts.length || cParts.length) fxStart();
+}
+var dxFDirty = false, cxFDirty = false;
+function fxDraw(cx, arr, w, h, now){
+ cx.clearRect(0, 0, w, h);
+ for(var i = arr.length - 1; i >= 0; i--){
+  var p = arr[i], t = (now - p.t0) / p.ms;
+  if(t >= 1){ arr.splice(i, 1); continue; }
+  p.x += p.vx; p.y += p.vy; p.vy += p.g; p.vx *= p.dr; p.vy *= p.dr;
+  cx.globalAlpha = (1 - t) * p.a;
+  cx.fillStyle = p.c;
+  var sz = p.s * (p.grow ? 1 + t * 1.6 : 1);
+  cx.fillRect(p.x - sz / 2, p.y - sz / 2, sz, sz);
+ }
+ cx.globalAlpha = 1;
+}
+/* Осколки породы: летят от удара, падают вниз, цвет берут у слоя. */
+function fxDig(x, y, n, big){
+ var pal = dMat.pal;
+ for(var i = 0; i < n; i++){
+  var a = Math.random() * Math.PI * 2, sp = (big ? 1.1 : 0.6) + Math.random() * 1.3;
+  dParts.push({x:x, y:y, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp - (big ? 1.4 : 0.8),
+   g:0.16, dr:0.98, a:0.9, s:(big ? 3.5 : 2.5) + Math.random() * 2.5,
+   c:pal[Math.floor(Math.random() * 3)], t0:Date.now(), ms:360 + Math.random() * 320, grow:false});
+ }
+ if(dParts.length > 200) dParts.splice(0, dParts.length - 200);
+ dxFDirty = true; fxStart();
+}
+/* Пыль с чистки: медленная, светлая, расплывается вверх. */
+function fxClean(x, y, n, chip){
+ for(var i = 0; i < n; i++){
+  var a = Math.random() * Math.PI * 2, sp = 0.15 + Math.random() * 0.35;
+  cParts.push({x:x, y:y, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp - 0.22,
+   g:chip ? 0.05 : -0.012, dr:0.985, a:chip ? 0.75 : 0.42,
+   s:(chip ? 2.5 : 3.5) + Math.random() * 2.5,
+   c:chip ? "#c4622e" : (Math.random() < 0.5 ? "#d8c9ab" : "#9c8763"),
+   t0:Date.now(), ms:chip ? 420 : 900 + Math.random() * 500, grow:!chip});
+ }
+ if(cParts.length > 160) cParts.splice(0, cParts.length - 160);
+ cxFDirty = true; fxStart();
+}
+
+/* ---------- фаза 1: раскоп ---------- */
+
+var dPit = document.getElementById("digPit");
+var dcU = document.getElementById("digUnder"), dcD = document.getElementById("digDirt");
+var dcF = document.getElementById("digFx");
+var dxU = dcU.getContext("2d"), dxD = dcD.getContext("2d"), dxF = dcF.getContext("2d");
+var dW = 0, dH = 0, dCell = 16, dCols = 12, dRows = 16;
+var dHp = null, dKind = null, dMaxHp = 1, dTotal = 1, dDone = 0, dSite = null, dTouched = 0;
+/* Слои идут листами: снял лист породы — под ним следующий, и так до последнего,
+   под которым лежит находка. Перейти к следующему листу можно, сняв BREAK клеток:
+   остаток осыпается сам, иначе участок приходится вытирать ровно и без выбора. */
+var dLayer = 0, dMat = MAT.sand, dReady = false, skidAt = 0;
+/* На раскопе находку не опознать вообще: виден только тёмный силуэт в корке.
+   Что именно выкопано, выясняется на чистке — там и стоит момент открытия.
+   Раскоп отдаёт игроку ярус («редкое»), чтобы решение, чем заняться дальше,
+   всё-таки было на чём строить. */
+/* Порода в участке неоднородна: мягкие промоины и твёрдые желваки. Копание
+   становится выбором маршрута, а не равномерным возюканьем пальцем. */
+var SOFT = 0.55, HARD = 1.8;
+
+function newSite(){
+ var h = curHole();
+ if(!h){ dSite = null; return; }
+ var a = arts()[pickIdx()];
+ var bw = 0.44 + Math.random() * 0.14, bh = bw * (0.95 + Math.random() * 0.3);
+ var bx = 0.14 + Math.random() * (0.72 - bw), by = 0.16 + Math.random() * (0.66 - bh);
+ dSite = {art:a, bx:bx, by:by, bw:bw, bh:bh};
+ dLayer = 0;
+ layoutDig();
+}
+/* Уровень лопаты, при котором после вычитания сопротивления остаётся хотя бы 0.5:
+   клетка ломается не дольше шести ударов. */
+function reqLv(res){
+ for(var lv = 0; lv <= 5; lv++) if(1.5 + 0.3 * lv - res >= 0.5) return lv;
+ return 5;
+}
+function layerMat(h, k){ return MAT[h.mats[Math.min(k, h.mats.length - 1)]]; }
+function layoutDig(){
+ var h = curHole();
+ if(!dSite || !h) return;
+ dMat = layerMat(h, dLayer);
+ dMaxHp = 2.6 * loc().hard * dMat.hp;
+ dHp = new Float32Array(dCols * dRows);
+ dKind = new Uint8Array(dCols * dRows);
+ dTotal = dCols * dRows; dDone = 0; dTouched = 0; dReady = false;
+ for(var b = 0; b < 6; b++){
+  var kind = b < 3 ? 1 : 2;
+  var bxc = Math.random() * dCols, byc = Math.random() * dRows, r = 1.4 + Math.random() * 1.6;
+  for(var yy = 0; yy < dRows; yy++) for(var xx = 0; xx < dCols; xx++){
+   var ddx = xx + 0.5 - bxc, ddy = yy + 0.5 - byc;
+   if(ddx * ddx + ddy * ddy <= r * r) dKind[yy * dCols + xx] = kind;
+  }
+ }
+ for(var y = 0; y < dRows; y++) for(var x = 0; x < dCols; x++){
+  var i = y * dCols + x;
+  dHp[i] = dMaxHp * (0.8 + Math.random() * 0.4) * (dKind[i] === 1 ? SOFT : (dKind[i] === 2 ? HARD : 1));
+ }
+ dParts.length = 0; dxF.clearRect(0, 0, dW, dH);
+ drawDigUnder(); drawDigAll();
+}
+/* Под снятыми клетками видно следующий лист, а под последним — саму находку.
+   Это и даёт ощущение глубины без вертикальных полос. */
+function drawDigUnder(){
+ var h = curHole();
+ dxU.fillStyle = "#1c150f"; dxU.fillRect(0, 0, dW, dH);
+ if(h && dLayer < h.mats.length - 1){
+  var nm = layerMat(h, dLayer + 1);
+  for(var y = 0; y < dRows; y++) for(var x = 0; x < dCols; x++){
+   var t = (x * 7 + y * 13) % 3;
+   dxU.fillStyle = nm.pal[t];
+   dxU.fillRect(x * dCell, y * dCell, dCell, dCell);
+   dxU.fillStyle = "rgba(0,0,0,.42)";
+   dxU.fillRect(x * dCell, y * dCell, dCell, dCell);
+   dxU.fillStyle = "rgba(0,0,0,.22)";
+   dxU.fillRect(x * dCell, y * dCell + dCell - 1, dCell, 1);
+  }
+  return;
+ }
+ dxU.fillStyle = "#15100b"; dxU.fillRect(0, 0, dW, dH);
+ var pal = loc().pal;
+ for(var k = 0; k < 22; k++){
+  var fx = ((k * 97) % 100) / 100 * dW, fy = ((k * 53) % 100) / 100 * dH, sz = 30 + (k % 5) * 18;
+  dxU.fillStyle = pal[k % 3]; dxU.globalAlpha = 0.22 + (k % 4) * 0.05;
+  dxU.beginPath(); dxU.moveTo(fx, fy); dxU.lineTo(fx + sz, fy + sz * 0.4);
+  dxU.lineTo(fx + sz * 0.5, fy + sz); dxU.closePath(); dxU.fill();
+ }
+ dxU.globalAlpha = 1;
+ if(!dSite) return;
+ var a = dSite.art, bx = dSite.bx * dW, by = dSite.by * dH, bw = dSite.bw * dW, bh = dSite.bh * dH;
+ for(var i = 0; i < a.p.length; i++) poly(dxU, a.p[i].g, bx, by, bw, bh, "#32251a");
+}
+function paintDigCell(x, y){
+ var i = y * dCols + x, h = dHp[i];
+ dxD.clearRect(x * dCell, y * dCell, dCell, dCell);
+ if(h <= 0) return;
+ var pal = dMat.pal, t = h / dMaxHp;
+ dxD.fillStyle = t > 0.66 ? pal[0] : (t > 0.33 ? pal[1] : pal[2]);
+ dxD.fillRect(x * dCell, y * dCell, dCell, dCell);
+ if(dKind[i] === 2){
+  dxD.fillStyle = "rgba(0,0,0,.34)";
+  dxD.fillRect(x * dCell, y * dCell, dCell, dCell);
+  dxD.fillStyle = "rgba(230,215,180,.22)";
+  dxD.fillRect(x * dCell + 2, y * dCell + dCell - 5, dCell - 4, 2);
+ }else if(dKind[i] === 1){
+  dxD.fillStyle = "rgba(255,240,205,.13)";
+  dxD.fillRect(x * dCell, y * dCell, dCell, dCell);
+ }
+ dxD.fillStyle = "rgba(0,0,0,.20)";
+ dxD.fillRect(x * dCell, y * dCell + dCell - 1, dCell, 1);
+ dxD.fillRect(x * dCell + dCell - 1, y * dCell, 1, dCell);
+}
+function drawDigAll(){
+ dxD.clearRect(0, 0, dW, dH);
+ for(var y = 0; y < dRows; y++) for(var x = 0; x < dCols; x++) paintDigCell(x, y);
+}
+/* Лопата не берёт породу, если её урон не перебивает сопротивление слоя.
+   Это не замок: игрок видит, какого уровня не хватает. */
+function skid(){
+ if(Date.now() - skidAt < 900) return;
+ skidAt = Date.now();
+ beep(64, .09, "sine", .03);
+ var w = document.getElementById("digSkid");
+ w.textContent = "ЛОПАТА СКОЛЬЗИТ · НУЖЕН УРОВЕНЬ " + reqLv(dMat.res);
+ w.classList.add("on");
+ setTimeout(function(){ w.classList.remove("on"); }, 2200);
+}
+function breakSheet(){
+ var h = curHole();
+ for(var j = 0; j < dHp.length; j++) dHp[j] = 0;
+ dDone = dTotal; drawDigAll();
+ if(h && dLayer < h.mats.length - 1){
+  dLayer++;
+  var nm = layerMat(h, dLayer);
+  beep(392, .08, "square", .04);
+  setTimeout(function(){ beep(262, .14, "square", .035); }, 90);
+  toast("СЛОЙ СНЯТ\nНИЖЕ " + nm.n + " ×" + nm.hp.toFixed(2));
+  layoutDig();
+ }else{
+  dReady = true;
+  beep(523, .09, "square", .04);
+  setTimeout(function(){ beep(784, .13, "square", .04); }, 100);
+ }
+ sync();
+}
+function digAt(px, py){
+ if(!dSite || dReady || S.crate.length >= CRATE_MAX) return;
+ var x0 = Math.floor(px / dCell), y0 = Math.floor(py / dCell), hit = 0;
+ var vein = veinOn(), rad = vein ? 2 : 1;
+ var dmg = digDmg() * (vein ? 2 : 1) - dMat.res;
+ if(dmg <= 0.001){ skid(); return; }
+ for(var dy = -rad; dy <= rad; dy++) for(var dx = -rad; dx <= rad; dx++){
+  var x = x0 + dx, y = y0 + dy;
+  if(x < 0 || y < 0 || x >= dCols || y >= dRows) continue;
+  var i = y * dCols + x;
+  if(dHp[i] <= 0) continue;
+  dHp[i] = Math.max(0, dHp[i] - dmg * (dx === 0 && dy === 0 ? 1 : 0.7));
+  paintDigCell(x, y); hit++; dTouched++;
+  if(dHp[i] <= 0){
+   dDone++;
+   fxDig(x * dCell + dCell / 2, y * dCell + dCell / 2, 4, true);
+  }
+ }
+ if(hit){
+  muteBubble();
+  fxDig(px, py, 2, false);
+  /* У каждой породы свой голос: песок шуршит, известняк колется, гранит бухает. */
+  var sn = dMat.snd;
+  if(Date.now() - digSound > 70){
+   digSound = Date.now();
+   beep(sn.f + Math.random() * sn.r, sn.d, sn.w, sn.v);
+  }
+  if(dDone / dTotal >= BREAK) breakSheet();
+  else sync();
+ }
+}
+var digSound = 0;
+bindStroke(dPit, 11, function(x, y){ digAt(x, y); });
+
+function extractDig(){
+ var h = curHole();
+ if(!dReady || !h || S.crate.length >= CRATE_MAX) return;
+ var a = dSite.art;
+ S.crate.push({loc:S.loc, i:arts().indexOf(a), u:newUid()});
+ S.digLoc[S.loc]++;
+ S.firstFind = 1;
+ h.left--;
+ if(h.t !== "ad") S.adFinds = (S.adFinds || 0) + 1;
+ beep(330, .08, "square", .04); setTimeout(function(){ beep(494, .12, "square", .04); }, 90);
+ toast("НАХОДКА В КОРКЕ\nВ ЯЩИК");
+ if(h.left <= 0) collapseHole(S.hole);
+ else newSite();
+ save(); sync();
+}
+/* Лунка кончилась: обваливается, на её месте появляется новая другого типа.
+   Лунка за рекламу не заменяется — она уходит в кулдаун. */
+function collapseHole(i){
+ var list = holes(), h = list[i];
+ if(!h) return;
+ if(h.t === "ad"){ list[i] = null; S.adAt = Date.now() + AD_COOL; S.adFinds = 0; }
+ else list[i] = makeHole(rollType(), S.loc);
+ ensureEasy(S.loc);
+ if(S.botHole === i) S.botHole = -1;
+ if(S.hole === i){ S.hole = -1; dSite = null; dReady = false; }
+ toast("ЛУНКА ОБВАЛИЛАСЬ\nВЫБЕРИ НОВУЮ");
+ beep(140, .12, "square", .035);
+ holeSig = "";
+}
+function pickHole(i){
+ var h = holes()[i];
+ if(!h) return no();
+ if(h.req > upLv("dig")){ toast("НУЖНА ЛОПАТА " + h.req + " УР."); return no(); }
+ /* Возврат в ту же лунку продолжает начатый участок, а не начинает его заново:
+    иначе кнопка «сменить лунку» молча стирала бы работу. */
+ if(i === S.hole && dSite){
+  pickOpen = false;
+  beep(392, .05, "square", .03);
+  save(); sync();
+  return;
+ }
+ S.hole = i;
+ pickOpen = false;
+ beep(440, .06, "square", .03);
+ newSite();
+ save(); sync();
+}
+function toggleHolePick(){
+ if(!curHole() || !dSite) return;
+ pickOpen = !pickOpen;
+ if(pickOpen) toast("ВЫБОР ЛУНКИ\nДРУГАЯ ЛУНКА НАЧНЁТ УЧАСТОК ЗАНОВО");
+ beep(330, .05, "square", .03);
+ holeSig = "";
+ sync();
+}
+/* Реклама в прототипе — заглушка: проверяем форму, SDK подключим, если игра зайдёт. */
+function openAdHole(){
+ if(!adReady()) return no();
+ var list = holes();
+ list[3] = makeHole("ad", S.loc);
+ S.adFinds = 0;
+ toast("ТАЙНИК ОТКРЫТ\nШАНСЫ ЛУЧШЕ, НО ЭТО ШАНС");
+ beep(587, .08, "square", .04);
+ holeSig = "";
+ pickHole(3);
+}
+document.getElementById("digCta").onclick = extractDig;
+document.getElementById("holeBtn").onclick = toggleHolePick;
+
+/* ---------- фаза 2: чистка ---------- */
+
+var cPit = document.getElementById("clnPit");
+var ccU = document.getElementById("clnUnder"), ccC = document.getElementById("clnCrust");
+var ccF = document.getElementById("clnFx");
+var cxU = ccU.getContext("2d"), cxC = ccC.getContext("2d"), cxF = ccF.getContext("2d");
+var cW = 0, cH = 0, cCell = 16, cCols = 12, cRows = 16;
+var cHp = null, cFrag = null, cHurt = null, cTotal = 1, cDone = 0, cItem = null, cQual = 1;
+/* Опознание живёт здесь, а не на раскопе: до ID_AT находка — тёмный силуэт под
+   коркой, на пороге проступает цветом и получает имя. Это и есть среднесрочная
+   цель, ради которой стоит чистить руками. */
+var ID_AT = 0.6, cLit = false;
+
+function clearClean(){
+ cxU.clearRect(0, 0, cW, cH);
+ cxC.clearRect(0, 0, cW, cH);
+ cParts.length = 0; cxF.clearRect(0, 0, cW, cH);
+ cTotal = 1; cDone = 0;
+}
+function crateIdxOf(u){
+ for(var i = 0; i < S.crate.length; i++) if(S.crate[i].u === u) return i;
+ return -1;
+}
+/* Чистим ту находку, которую выбрал игрок. Если её уже нет — первую в ящике. */
+function ensureClean(){
+ if(cItem) return;
+ if(!S.crate.length){ clearClean(); S.clnPick = 0; return; }
+ var k = crateIdxOf(S.clnPick);
+ if(k < 0) k = 0;
+ var raw = S.crate[k];
+ S.clnPick = raw.u;
+ cItem = {loc:raw.loc, i:raw.i, u:raw.u, art:ART[raw.loc][raw.i]};
+ cQual = 1; chipShown = false;
+ layoutClean();
+}
+function layoutClean(){
+ if(!cItem) return;
+ cHp = new Float32Array(cCols * cRows);
+ cFrag = new Uint8Array(cCols * cRows);
+ cHurt = new Uint8Array(cCols * cRows);
+ cTotal = 0; cDone = 0; cLit = false;
+ var f1x = 0.25 + Math.random() * 0.2, f1y = 0.25 + Math.random() * 0.2;
+ var f2x = 0.55 + Math.random() * 0.2, f2y = 0.5 + Math.random() * 0.25;
+ for(var y = 0; y < cRows; y++) for(var x = 0; x < cCols; x++){
+  var i = y * cCols + x;
+  var u = (x + 0.5) / cCols, v = (y + 0.5) / cRows;
+  if(u < 0.12 || u > 0.88 || v < 0.06 || v > 0.94) continue;
+  cHp[i] = 1.3 + Math.random() * 0.5;
+  cTotal++;
+  var d1 = Math.hypot(u - f1x, v - f1y), d2 = Math.hypot(u - f2x, v - f2y);
+  if(d1 < 0.15 || d2 < 0.13) cFrag[i] = 1;
+ }
+ if(!cTotal) cTotal = 1;
+ drawCleanUnder(); drawCleanAll();
+}
+function drawCleanUnder(){
+ cxU.fillStyle = "#14100b"; cxU.fillRect(0, 0, cW, cH);
+ var a = cItem.art, m = Math.min(cW, cH) * 0.82;
+ var bx = (cW - m) / 2, by = (cH - m) / 2;
+ for(var i = 0; i < a.p.length; i++) poly(cxU, a.p[i].g, bx, by, m, m, cLit ? a.p[i].c : "#2a2018");
+}
+function paintCleanCell(x, y){
+ var i = y * cCols + x, h = cHp[i];
+ cxC.clearRect(x * cCell, y * cCell, cCell, cCell);
+ if(h <= 0) return;
+ var pal = LOC[cItem.loc].pal, t = h / 2.4;
+ cxC.fillStyle = t > 0.6 ? pal[1] : pal[2];
+ cxC.fillRect(x * cCell, y * cCell, cCell, cCell);
+ if(cFrag[i]){
+  cxC.fillStyle = cHurt[i] ? "rgba(196,98,46,.55)" : "rgba(196,98,46,.30)";
+  cxC.fillRect(x * cCell, y * cCell, cCell, cCell);
+ }
+ cxC.fillStyle = "rgba(0,0,0,.20)";
+ cxC.fillRect(x * cCell, y * cCell + cCell - 1, cCell, 1);
+ cxC.fillRect(x * cCell + cCell - 1, y * cCell, 1, cCell);
+}
+function drawCleanAll(){
+ cxC.clearRect(0, 0, cW, cH);
+ for(var y = 0; y < cRows; y++) for(var x = 0; x < cCols; x++) paintCleanCell(x, y);
+}
+var FRAG_COST = 0.025, brushSound = 0, chipShown = false;
+function brushAt(px, py, speed){
+ if(!cItem) return;
+ var x0 = Math.floor(px / cCell), y0 = Math.floor(py / cCell), hit = 0;
+ var br = brushRad(), lim = fastLim(), bd = brushDmg();
+ for(var dy = -br; dy <= br; dy++) for(var dx = -br; dx <= br; dx++){
+  var x = x0 + dx, y = y0 + dy;
+  if(x < 0 || y < 0 || x >= cCols || y >= cRows) continue;
+  var i = y * cCols + x;
+  if(cHp[i] <= 0) continue;
+  if(cFrag[i] && speed > lim && !cHurt[i]){
+   cHurt[i] = 1; cQual = Math.max(0.25, cQual - FRAG_COST);
+   fxClean(x * cCell + cCell / 2, y * cCell + cCell / 2, 5, true);
+   beep(160, .06, "sawtooth", .035);
+   if(!chipShown){ chipShown = true; toast("СКОЛ\nНА ОРАНЖЕВОМ ВЕДИ МЕДЛЕННЕЕ"); }
+  }
+  cHp[i] = Math.max(0, cHp[i] - bd * (dx === 0 && dy === 0 ? 1 : 0.7));
+  paintCleanCell(x, y); hit++;
+  if(cHp[i] <= 0) cDone++;
+ }
+ if(hit){
+  muteBubble();
+  fxClean(px, py, 2, false);
+  if(Date.now() - brushSound > 80){
+   brushSound = Date.now();
+   beep(230 + Math.random() * 60, .07, "sine", .016);
+  }
+  if(!cLit && cDone / cTotal >= ID_AT){
+   cLit = true; drawCleanUnder();
+   beep(587, .09, "square", .04); setTimeout(function(){ beep(880, .13, "square", .035); }, 100);
+   toast("ЭТО " + cItem.art.n);
+  }
+  if(cDone < cTotal && cDone / cTotal >= 0.98){
+   for(var j = 0; j < cHp.length; j++) if(cHp[j] > 0){ cHp[j] = 0; cDone++; }
+   drawCleanAll();
+  }
+  sync();
+ }
+}
+bindStroke(cPit, 9, function(x, y, sp){ brushAt(x, y, sp); });
+
+function finishClean(){
+ if(!cItem || cDone < cTotal || S.store.length >= STORE_MAX) return;
+ var ci = crateIdxOf(cItem.u);
+ if(ci >= 0) S.crate.splice(ci, 1); else S.crate.shift();
+ S.clnPick = 0;
+ S.store.push({loc:cItem.loc, i:cItem.i, q:cQual, u:newUid(), h:1});
+ if(cQual >= 0.999){ S.perfect[S.loc]++; S.pity++; }
+ var first = cQual >= 0.999 && !S.seen.exh;
+ if(cQual >= 0.999) S.seen.exh = 1;
+ var pretty = Math.round(cQual * 100);
+ toast(cItem.art.n + "\n" + (pretty >= 100 ? "БЕЗ ЕДИНОЙ ЦАРАПИНЫ" : "КАЧЕСТВО " + pretty + "%") +
+  (first ? "\nЭТО ЭКСПОНАТ · ОТКРЫТ АЛЬБОМ" : ""));
+ beep(392, .09, "square", .04); setTimeout(function(){ beep(587, .14, "square", .04); }, 100);
+ cItem = null; ensureClean(); save(); sync();
+}
+document.getElementById("clnCta").onclick = finishClean;
+
+/* ---------- фаза 3: лавка ---------- */
+
+var deals = [], dealEnds = 0;
+var DEAL_LIFE = 30000, DEAL_FIRST = 20000, MAX_DEALS = 3;
+var dealAt = Date.now() + DEAL_FIRST;
+function dealWait(){
+ if(S.sold === 0) return DEAL_FIRST;
+ var L = loc(), w = L.waveMin + Math.random() * (L.waveMax - L.waveMin);
+ /* Пока на витрине один-два предмета, покупателю всё равно достанется только
+    один из них. Ждать полный интервал в этот момент — это просто пустой экран. */
+ var free = freeShelf().length;
+ return w * (free >= 3 ? 1 : (free === 2 ? 0.75 : 0.5));
+}
+function scheduleWave(ms){ dealAt = Date.now() + (ms === undefined ? dealWait() : ms); }
+function newUid(){ return S.uid++; }
+function shelfOf(u){
+ for(var i = 0; i < S.shelf.length; i++) if(S.shelf[i].u === u) return S.shelf[i];
+ return null;
+}
+function dealOf(u){
+ for(var i = 0; i < deals.length; i++) if(deals[i].u === u) return deals[i];
+ return null;
+}
+function dropDeal(u, why){
+ for(var i = 0; i < deals.length; i++) if(deals[i].u === u){ deals.splice(i, 1); break; }
+ if(why) toast(why);
+ if(screen === "shop") paintShop();
+ sync();
+}
+
+function freeShelf(){
+ var f = [];
+ for(var i = 0; i < S.shelf.length; i++) if(!dealOf(S.shelf[i].u)) f.push(S.shelf[i]);
+ return f;
+}
+/* Единственный покупатель за весь тутор приходит по сценарию: когда игрок увёл
+   вторую находку на чистку, а первая всё ещё стоит на прилавке. Он бессрочный —
+   тутор обещал, что покупатель дождётся, и обещание не должно съедаться таймером. */
+function tutDealCheck(){
+ if(S.tutBuy || S.tut >= FREE_STEP) return;
+ if(S.digLoc[S.loc] < 2 || !cItem || !S.shelf.length) return;
+ /* Покупатель всегда музей: тутор называет его по имени, и подменять его туристом
+    из-за низкого качества нельзя. Пол цены — чтобы первая продажа не вышла в копейки,
+    если игрок на чистке торопился. */
+ /* Денег с этой продажи должно хватить ровно на первый уровень лопаты — следующий
+    шаг тутора ведёт в прокачку, — но не на копателя: автоматизацию игрок покупает сам. */
+ var it = S.shelf[0], b = BUYERS[1];
+ S.tutBuy = 1;
+ deals.push({b:b, u:it.u, sum:Math.max(upCost("dig") + 20, offerFor(it, b)),
+  ends:Date.now() + 36e5, min:false, tut:true});
+ beep(494, .07, "square", .035);
+ toast("ПОКУПАТЕЛЬ У ВИТРИНЫ\nОН ДОЖДЁТСЯ");
+ if(screen === "shop") paintShop();
+}
+function offerFor(it, b){
+ var a = ART[it.loc][it.i];
+ var sum = a.v * LOC[it.loc].mult * qualMult(it.q) * b.m * (0.9 + Math.random() * 0.2);
+ if(hypeOn()) sum *= HYPE_MULT;
+ return Math.max(1, Math.round(sum));
+}
+function addBuyer(){
+ if(deals.length >= MAX_DEALS) return false;
+ var free = freeShelf();
+ if(!free.length) return false;
+ var b = BUYERS[Math.floor(Math.random() * BUYERS.length)];
+ var ok = [];
+ for(var j = 0; j < free.length; j++) if(free[j].q >= b.min) ok.push(free[j]);
+ if(!ok.length) return false;
+ var it = ok[Math.floor(Math.random() * ok.length)];
+ deals.push({b:b, u:it.u, sum:offerFor(it, b), ends:Date.now() + DEAL_LIFE, min:false});
+ return true;
+}
+/* Между первой продажей и второй находкой случайные покупатели не приходят:
+   в этом окне тутор ведёт игрока к лункам, а покупатель у витрины дёргал бы его
+   обратно в лавку и запускал шаги про продажу раньше времени. Первый покупатель
+   (за скарабея) по сценарию нужен, второго сажает tutBuyer. */
+function wavesOn(){ return S.tut >= FREE_STEP; }
+function newWave(){
+ if(!wavesOn()){ scheduleWave(); return; }
+ var want = 1 + Math.floor(Math.random() * MAX_DEALS), got = 0;
+ for(var i = 0; i < want; i++) if(addBuyer()) got++;
+ scheduleWave();
+ if(got){
+  beep(440, .06, "square", .03);
+  if(screen === "shop") paintShop();
+  sync();
+ }
+}
+
+function sellDeal(u){
+ var d = dealOf(u), it = shelfOf(u);
+ if(!d || !it) return no();
+ var a = ART[it.loc][it.i];
+ var m = saleMult(), paid = Math.round(d.sum * m);
+ S.coins += paid; S.sold++; S.soldLoc[S.loc]++;
+ for(var i = 0; i < S.shelf.length; i++) if(S.shelf[i].u === u){ S.shelf.splice(i, 1); break; }
+ spendSet();
+ toast(a.n + "\n+" + fmt(paid) + (m > 1 ? "\nКОЛЛЕКЦИЯ ×" + m.toFixed(2) : ""));
+ beep(523, .08, "square", .04); setTimeout(function(){ beep(784, .14, "square", .04); }, 90);
+ for(var k = deals.length - 1; k >= 0; k--) if(deals[k].u === u) deals.splice(k, 1);
+ save(); paintShop(); sync();
+}
+function holdDeal(u){
+ var d0 = dealOf(u);
+ if(!d0) return no();
+ if(d0.tut){ toast("ЭТОГО НЕ ПРИДЕРЖАТЬ\nПРОДАВАЙ"); return no(); }
+ beep(300, .06, "square", .03);
+ dropDeal(u, "ПОКУПАТЕЛЬ УШЁЛ");
+}
+
+function displayItem(i){
+ if(S.shelf.length >= SHELF_MAX) return no();
+ var it = S.store[i];
+ if(!it) return no();
+ S.store.splice(i, 1);
+ S.shelf.push(it);
+ beep(523, .06, "square", .035);
+ save(); paintShop(); sync();
+}
+/* Наёмник чистит на 50–85%, игрок руками доходит до 100%. Разница в цене уже
+   есть в qualMult, но её не видно ни на складе, ни в сделке — отсюда метка. */
+function handTag(it){
+ return '<div class="sh' + (it.h ? " by" : "") + '">' + (it.h ? "ЧИСТИЛ ТЫ" : "НАЁМНИК") + '</div>';
+}
+function paintStore(){
+ var wrap = document.getElementById("store");
+ wrap.innerHTML = "";
+ document.getElementById("storeN").textContent = S.store.length + "/" + STORE_MAX;
+ if(!S.store.length){
+  var e = document.createElement("div");
+  e.className = "si empty"; e.textContent = "ПУСТО";
+  wrap.appendChild(e); return;
+ }
+ var free = S.shelf.length < SHELF_MAX;
+ for(var i = 0; i < S.store.length; i++)(function(i){
+  var it = S.store[i], a = ART[it.loc][it.i];
+  var w = document.createElement("div");
+  w.className = "siw";
+  var b = document.createElement("button");
+  b.type = "button";
+  b.className = "si" + (free ? " can" : "");
+  b.innerHTML = svgOf(a, 30) +
+    '<div class="sn">' + a.n + '</div>' +
+    '<div class="sq" style="color:' + qualColor(it.q) + '">' + Math.round(it.q * 100) + '%</div>' +
+    handTag(it);
+  b.onclick = function(){ displayItem(i); };
+  w.appendChild(b);
+  if(canDonate(it)){
+   var d = document.createElement("button");
+   d.type = "button"; d.className = "btn donate"; d.textContent = "В АЛЬБОМ";
+   d.onclick = function(){ donate(it.u); };
+   w.appendChild(d);
+  }
+  wrap.appendChild(w);
+ })(i);
+}
+
+/* Сдать экспонат. Ищем по стабильному id: пока игрок думает, менеджер мог
+   сдвинуть склад, и индекс успел бы устареть. */
+function donate(u){
+ var idx = -1;
+ for(var i = 0; i < S.store.length; i++) if(S.store[i].u === u){ idx = i; break; }
+ if(idx < 0) return;
+ var it = S.store[idx];
+ if(!canDonate(it)) return;
+ S.album[it.loc][it.i] = 1;
+ S.store.splice(idx, 1);
+ var armed = armSet(it.loc, tierOf(it.i));
+ beep(523, .10, "square", .05);
+ setTimeout(function(){ beep(784, .16, "square", .05); }, 110);
+ toast(ART[it.loc][it.i].n + "\n" + (armed
+  ? TIER_NAME[armed.t] + " СОБРАНЫ\nЦЕНА ×" + SET_MULT[armed.t].toFixed(2) + " НА " + armed.left + " ПРОДАЖ"
+  : "В АЛЬБОМЕ · " + albumTier(it.loc, tierOf(it.i)) + "/" + TIER_N));
+ save(); paintShop();
+ if(screen === "album") paintAlbum();
+ sync();
+}
+
+function paintAlbum(){
+ var g = document.getElementById("albumGrid"), r = S.loc;
+ g.innerHTML = "";
+ var note = document.createElement("div");
+ note.className = "alNote";
+ note.textContent = "Экспонат — находка, очищенная до 100%. Наёмник такой не сдаёт. " +
+  "Гарантия: " + Math.max(0, PITY - S.pity) + " идеальных чисток до новой уникальной.";
+ g.appendChild(note);
+
+ for(var t = 0; t < TIERS; t++){
+  var n = albumTier(r, t), st = setOf(r, t);
+  var h = document.createElement("div");
+  h.className = "alHead";
+  h.innerHTML = TIER_NAME[t] + " · <b>" + n + "/" + TIER_N + "</b> · " +
+   (st ? "ЦЕНА ×" + SET_MULT[t].toFixed(2) + " · ОСТАЛОСЬ " + st.left + " ПРОДАЖ"
+       : "ЗА ЧЕТВЁРКУ: ЦЕНА ×" + SET_MULT[t].toFixed(2) + " НА " + SET_SALES[t] + " ПРОДАЖ");
+  g.appendChild(h);
+  for(var i = t * TIER_N; i < (t + 1) * TIER_N && i < ART[r].length; i++){
+   var a = ART[r][i], have = !!S.album[r][i];
+   var c = document.createElement("div");
+   c.className = "ac " + (have ? "have" : "miss");
+   c.innerHTML = svgOf(a, 34) +
+    '<div><div class="an">' + a.n + '</div>' +
+    '<div class="as">' + (have ? "В АЛЬБОМЕ" : "ЧИСТИ ДО 100%") + '</div></div>';
+   g.appendChild(c);
+  }
+ }
+}
+
+function faceSvg(b){
+ return '<svg viewBox="0 0 40 52" aria-hidden="true" class="of">' +
+  '<polygon points="8,16 20,3 32,16 20,12" fill="' + b.face + '"></polygon>' +
+  '<polygon points="3,17 20,6 37,17 33,20 20,12 7,20" fill="#2c2c38"></polygon>' +
+  '<polygon points="11,17 29,17 28,29 20,36 12,29" fill="#d8b089"></polygon>' +
+  '<polygon points="11,17 20,17 20,36 12,29" fill="#e8c7a2"></polygon>' +
+  '<polygon points="13,22 18,22 18,26 13,26" fill="#2b2118"></polygon>' +
+  '<polygon points="22,22 27,22 27,26 22,26" fill="#2b2118"></polygon>' +
+  '<polygon points="14,31 26,31 24,44 20,50 16,44" fill="' + b.face + '"></polygon></svg>';
+}
+function paintShop(){
+ paintStore();
+ var wrap = document.getElementById("slots");
+ wrap.innerHTML = "";
+ for(var i = 0; i < SHELF_MAX; i++){
+  var d = document.createElement("div");
+  d.className = "slot";
+  var it = S.shelf[i];
+  if(it){
+   var a = ART[it.loc][it.i];
+   d.className = "slot full";
+   if(dealOf(it.u)) d.style.borderColor = "var(--hud)";
+   d.innerHTML = svgOf(a, 40) +
+     '<div class="sn">' + a.n + '</div>' +
+     '<div class="sq" style="color:' + qualColor(it.q) + '">' + Math.round(it.q * 100) + '%</div>' +
+     handTag(it);
+  }else{
+   d.innerHTML = '<div class="empty">СЛОТ<br>СВОБОДЕН</div>';
+  }
+  wrap.appendChild(d);
+ }
+
+ var list = document.getElementById("deals");
+ list.innerHTML = "";
+ if(!deals.length){
+  var e = document.createElement("div");
+  e.className = "offer none";
+  e.innerHTML = '<div class="ol">' + (S.shelf.length ?
+    "У витрины пусто. Покупатели заходят сами — копай пока дальше." :
+    "Витрина пуста. Выставь товар со склада.") + '</div>';
+  list.appendChild(e);
+  shopSig = shopState();
+  return;
+ }
+ for(var k = 0; k < deals.length; k++)(function(d){
+  var it = shelfOf(d.u);
+  if(!it) return;
+  var a = ART[it.loc][it.i];
+  var card = document.createElement("div");
+  card.className = "offer" + (d.min ? " min" : "");
+  var left = Math.max(0, Math.ceil((d.ends - Date.now()) / 1000));
+
+  var head = document.createElement("div");
+  head.className = "oh";
+  head.innerHTML = '<span class="on">' + d.b.n + '</span><span class="oc" id="dtm' + d.u + '">' +
+    (d.tut ? "ЖДЁТ" : left + " С") + '</span>' +
+    '<span class="ot">' + (d.min ? "+" : "–") + '</span>';
+  head.onclick = function(){ d.min = !d.min; beep(330, .05, "square", .025); paintShop(); };
+  card.appendChild(head);
+
+  var body = document.createElement("div");
+  body.className = "ob";
+  body.innerHTML =
+    '<div class="row" style="align-items:flex-start;gap:10px">' + faceSvg(d.b) +
+      '<div class="ol" style="flex-grow:1;min-width:0">' + d.b.line + '</div></div>' +
+    '<div class="orow"><span class="ofor">ЗА ' + a.n + '</span><span class="osum">+' +
+      fmt(Math.round(d.sum * saleMult())) + '</span></div>' +
+    '<div class="onote">Качество ' + Math.round(it.q * 100) + '% · множитель ×' + qualMult(it.q).toFixed(2) +
+      ' · ' + (it.h ? 'чистил ты' : 'чистил наёмник') +
+      (bestSet() ? ' · коллекция ×' + saleMult().toFixed(2) + ', осталось ' + bestSet().left : '') + '</div>';
+
+  var row = document.createElement("div");
+  row.className = "row"; row.style.gap = "8px";
+  var bs = document.createElement("button");
+  bs.className = "btn half"; bs.type = "button"; bs.textContent = "ПРОДАТЬ";
+  bs.onclick = function(){ sellDeal(d.u); };
+  var bh = document.createElement("button");
+  bh.className = "btn half"; bh.type = "button";
+  /* Туторную сделку придержать нельзя: шаг обещает продажу, и отказ от неё
+     оставил бы игрока без денег и без покупателя. */
+  bh.textContent = d.tut ? "НЕ СЕЙЧАС" : "ПРИДЕРЖАТЬ";
+  bh.disabled = !!d.tut;
+  bh.onclick = function(){ holdDeal(d.u); };
+  row.appendChild(bs); row.appendChild(bh);
+  body.appendChild(row);
+  card.appendChild(body);
+  list.appendChild(card);
+ })(deals[k]);
+ shopSig = shopState();
+}
+
+/* Перерисовка по таймеру убивала нажатия: карточка пересобиралась между
+   нажатием и отпусканием пальца, и клик уходил в никуда. Теперь по таймеру
+   обновляются только секунды, а весь экран — когда действительно изменился. */
+var shopSig = "";
+function shopState(){
+ var b0 = bestSet();
+ var a = [S.shelf.length, S.store.length, b0 ? b0.t + ":" + b0.left : "-"];
+ for(var i = 0; i < deals.length; i++) a.push(deals[i].u + ":" + deals[i].sum + ":" + (deals[i].min ? 1 : 0));
+ a.push("|");
+ for(var j = 0; j < S.shelf.length; j++) a.push(S.shelf[j].u);
+ a.push("|");
+ for(var k = 0; k < S.store.length; k++) a.push(S.store[k].u);
+ return a.join(",");
+}
+function shopSync(){
+ if(shopState() !== shopSig){ paintShop(); return; }
+ var now = Date.now();
+ for(var i = 0; i < deals.length; i++){
+  if(deals[i].tut) continue;
+  var el = document.getElementById("dtm" + deals[i].u);
+  if(el) el.textContent = Math.max(0, Math.ceil((deals[i].ends - now) / 1000)) + " С";
+ }
+}
+
+/* ---------- карта ---------- */
+
+function bankCap(r){ return passiveOf(r) * PASSIVE_CAP_MIN; }
+function canTravel(r){
+ return S.digger[S.loc] && S.cleaner[S.loc] && S.unlocked[r] === 0 && S.coins >= LOC[r].open;
+}
+function paintMap(){
+ var list = document.getElementById("mapList");
+ list.innerHTML = "";
+ for(var k = 0; k < LOC.length; k++)(function(k){
+  var L = LOC[k], card = document.createElement("div");
+  card.className = "loc" + (k === S.loc ? " here" : "");
+  var g = document.createElement("div"); g.className = "g";
+  var title = document.createElement("div"); title.className = "ln"; title.textContent = L.n;
+  var sub = document.createElement("div"); sub.className = "ls";
+  g.appendChild(title); g.appendChild(sub);
+
+  var btn = document.createElement("button"); btn.className = "btn"; btn.type = "button";
+
+  if(!S.unlocked[k]){
+   sub.textContent = "ЗАКРЫТО · НУЖНО " + fmt(L.open);
+   var prog = document.createElement("div"); prog.className = "bar";
+   var pi = document.createElement("i"); pi.style.width = Math.min(100, S.coins / L.open * 100) + "%";
+   prog.appendChild(pi); g.appendChild(prog);
+   var ready = S.digger[S.loc] && S.cleaner[S.loc] && S.coins >= L.open;
+   btn.textContent = ready ? "ЕХАТЬ" : "ЗАКРЫТО";
+   btn.disabled = !ready;
+   if(ready) btn.id = "travelBtn";
+   if(ready){ btn.classList.add("can"); card.classList.add("ready"); btn.onclick = function(){ travel(k); }; }
+   else if(!(S.digger[S.loc] && S.cleaner[S.loc])) sub.textContent += " · И НАНЯТЬ ЛЮДЕЙ";
+  }else if(k === S.loc){
+   sub.textContent = "ВЫ ЗДЕСЬ";
+   btn.textContent = "ЗДЕСЬ"; btn.disabled = true;
+  }else{
+   var bank = Math.floor(S.bank[k]);
+   sub.textContent = "АВТОНОМНО · " + fmt(Math.round(passiveOf(k))) + "/МИН";
+   var b2 = document.createElement("div"); b2.className = "bar";
+   var i2 = document.createElement("i"); i2.id = "bank" + k;
+   i2.style.width = Math.min(100, bank / bankCap(k) * 100) + "%";
+   b2.appendChild(i2); g.appendChild(b2);
+   card.classList.add("ready");
+   btn.id = "collect" + k;
+   btn.textContent = "СОБРАТЬ " + fmt(bank);
+   btn.disabled = bank < 1;
+   if(bank >= 1){ btn.classList.add("can"); btn.onclick = function(){ collect(k); }; }
+  }
+
+  card.appendChild(g); card.appendChild(btn);
+  list.appendChild(card);
+
+  if(k === S.loc){
+   var hire = document.createElement("div"); hire.className = "hire";
+   var bd = document.createElement("button"); bd.className = "btn"; bd.type = "button"; bd.id = "hireDig";
+   if(S.digger[k]){ bd.textContent = "КОПАТЕЛЬ НАНЯТ"; bd.disabled = true; }
+   else{
+    bd.textContent = "КОПАТЕЛЬ " + fmt(L.digger);
+    if(S.coins >= L.digger){ bd.classList.add("can"); bd.onclick = function(){ hireOne(k, "digger"); }; }
+    else bd.disabled = true;
+   }
+   var bc = document.createElement("button"); bc.className = "btn"; bc.type = "button"; bc.id = "hireCln";
+   if(S.cleaner[k]){ bc.textContent = "ЧИСТИЛЬЩИК НАНЯТ"; bc.disabled = true; }
+   else{
+    bc.textContent = "ЧИСТИЛЬЩИК " + fmt(L.cleaner);
+    if(S.coins >= L.cleaner){ bc.classList.add("can"); bc.onclick = function(){ hireOne(k, "cleaner"); }; }
+    else bc.disabled = true;
+   }
+   hire.appendChild(bd); hire.appendChild(bc);
+   list.appendChild(hire);
+
+   var hire2 = document.createElement("div"); hire2.className = "hire";
+   var bm = document.createElement("button"); bm.className = "btn"; bm.type = "button"; bm.id = "hireMgr";
+   if(S.manager[k]){
+    bm.textContent = "МЕНЕДЖЕР НАНЯТ"; bm.disabled = true;
+    var bmode = document.createElement("button");
+    bmode.className = "btn can"; bmode.type = "button"; bmode.id = "mgrMode";
+    bmode.textContent = S.mgrMode ? "ЖДЁТ ЛУЧШИХ" : "ПРОДАЁТ СРАЗУ";
+    bmode.onclick = function(){
+     S.mgrMode = S.mgrMode ? 0 : 1;
+     beep(440, .06, "square", .03);
+     toast(S.mgrMode ? "МЕНЕДЖЕР ЖДЁТ\nТОЛЬКО МУЗЕЙ И КОЛЛЕКЦИОНЕР" : "МЕНЕДЖЕР ПРОДАЁТ СРАЗУ");
+     save(); paintMap(); sync();
+    };
+    hire2.appendChild(bm); hire2.appendChild(bmode);
+   }else{
+    bm.textContent = "МЕНЕДЖЕР " + fmt(L.mgr);
+    if(S.coins >= L.mgr){ bm.classList.add("can"); bm.onclick = function(){ hireOne(k, "manager"); }; }
+    else bm.disabled = true;
+    hire2.appendChild(bm);
+   }
+   list.appendChild(hire2);
+
+   var note = document.createElement("div");
+   note.className = "small";
+   note.style.lineHeight = "1.25";
+   note.textContent = "Копатель приносит находки сам. Чистильщик чистит их кое-как — от 50 до 85% качества. Менеджер сам выставляет товар на прилавок и торгует: либо продаёт первому встречному, либо ждёт музей и коллекционера. Когда наняты копатель и чистильщик, лавку можно оставить и уехать.";
+   list.appendChild(note);
+  }
+ })(k);
+
+ paintUps(list);
+
+ var rb = document.createElement("button");
+ rb.className = "btn"; rb.type = "button"; rb.id = "reset";
+ var armed = Date.now() - resetArm < 4000;
+ rb.classList.toggle("arm", armed);
+ rb.textContent = armed ? "ТОЧНО? ЖМИ ЕЩЁ РАЗ" : "СБРОСИТЬ ПРОГРЕСС";
+ rb.onclick = resetProgress;
+ list.appendChild(rb);
+ mapSig = mapState();
+}
+
+var mapSig = "";
+function buyUp(k){
+ var lv = upLv(k), def = null;
+ for(var i = 0; i < UP.length; i++) if(UP[i].k === k) def = UP[i];
+ if(!def || lv >= def.max) return no();
+ var c = upCost(k);
+ if(S.coins < c) return no();
+ S.coins -= c; S.up[k] = lv + 1;
+ beep(523, .07, "square", .04); setTimeout(function(){ beep(784, .12, "square", .04); }, 90);
+ toast(def.n + " " + (lv + 1) + " УР.");
+ save(); paintMap(); sync();
+}
+function paintUps(list){
+ var head = document.createElement("div");
+ head.className = "small"; head.style.letterSpacing = "1px";
+ head.textContent = "ИНСТРУМЕНТ · ОБЩИЙ НА ВСЕ ЛОКАЦИИ";
+ list.appendChild(head);
+ for(var i = 0; i < UP.length; i++)(function(u){
+  var lv = upLv(u.k), maxed = lv >= u.max, c = upCost(u.k);
+  var card = document.createElement("div"); card.className = "loc";
+  var g = document.createElement("div"); g.className = "g";
+  var t = document.createElement("div"); t.className = "ln";
+  t.textContent = u.n + " · " + lv + "/" + u.max;
+  var sub = document.createElement("div"); sub.className = "ls"; sub.textContent = u.d;
+  g.appendChild(t); g.appendChild(sub);
+  var btn = document.createElement("button");
+  btn.className = "btn"; btn.type = "button"; btn.id = "up_" + u.k;
+  if(maxed){ btn.textContent = "МАКСИМУМ"; btn.disabled = true; }
+  else{
+   btn.textContent = fmt(c);
+   if(S.coins >= c){ btn.classList.add("can"); btn.onclick = function(){ buyUp(u.k); }; }
+   else btn.disabled = true;
+  }
+  card.appendChild(g); card.appendChild(btn);
+  list.appendChild(card);
+ })(UP[i]);
+}
+function mapState(){
+ var a = [S.loc, Math.floor(S.coins), S.mgrMode, Date.now() - resetArm < 4000 ? 1 : 0,
+          upLv("dig"), upLv("brush"), upLv("hand")];
+ for(var k = 0; k < LOC.length; k++)
+  a.push(S.unlocked[k], S.digger[k], S.cleaner[k], S.manager[k], S.left[k],
+         Math.floor(S.bank[k]) >= 1 ? 1 : 0);
+ return a.join(",");
+}
+function mapSync(){
+ if(mapState() !== mapSig){ paintMap(); return; }
+ for(var k = 0; k < LOC.length; k++){
+  if(!S.left[k] || k === S.loc) continue;
+  var bank = Math.floor(S.bank[k]);
+  var b = document.getElementById("collect" + k), i2 = document.getElementById("bank" + k);
+  if(b) b.textContent = "СОБРАТЬ " + fmt(bank);
+  if(i2) i2.style.width = Math.min(100, bank / bankCap(k) * 100) + "%";
+ }
+}
+
+var resetArm = 0;
+function resetProgress(){
+ var now = Date.now();
+ if(now - resetArm > 4000){
+  resetArm = now;
+  beep(220, .08, "square", .04);
+  toast("СБРОС СНЕСЁТ ВЕСЬ ПРОГРЕСС\nЖМИ ЕЩЁ РАЗ, ЧТОБЫ ПОДТВЕРДИТЬ");
+  paintMap();
+  setTimeout(function(){ if(screen === "map") paintMap(); }, 4100);
+  return;
+ }
+ resetArm = 0;
+ try{ localStorage.removeItem("dig.v5"); }catch(e){}
+ location.reload();
+}
+function hireOne(k, kind){
+ var L = LOC[k], cost = kind === "digger" ? L.digger : (kind === "cleaner" ? L.cleaner : L.mgr);
+ if(S.coins < cost) return no();
+ S.coins -= cost;
+ if(kind === "digger") S.digger[k] = 1;
+ else if(kind === "cleaner") S.cleaner[k] = 1;
+ else S.manager[k] = 1;
+ beep(660, .07, "square", .035); setTimeout(function(){ beep(880, .12, "square", .035); }, 80);
+ toast(kind === "digger" ? "КОПАТЕЛЬ НАНЯТ" : (kind === "cleaner" ? "ЧИСТИЛЬЩИК НАНЯТ" : "МЕНЕДЖЕР НАНЯТ"));
+ save(); paintMap(); sync();
+}
+function travel(k){
+ var L = LOC[k];
+ if(S.coins < L.open) return no();
+ S.coins -= L.open;
+ S.left[S.loc] = 1;
+ S.unlocked[k] = 1;
+ S.loc = k;
+ if(S.tut < TUT.length) S.tut = TUT.length;
+ S.crate = []; S.store = []; S.shelf = []; cItem = null; clearClean(); deals = []; scheduleWave(DEAL_FIRST);
+ beep(262, .1, "square", .05); setTimeout(function(){ beep(392, .2, "square", .05); }, 110);
+ toast("НОВАЯ ЛАВКА\n" + L.n);
+ S.hole = -1; S.botHole = -1; dSite = null; dReady = false; holeSig = "";
+ if(!S.holes[k] || !S.holes[k].length) genHoles(k);
+ ensureEasy(k);
+ ensureHole(); resizeAll(true); save(); show("dig");
+}
+function collect(k){
+ var g = Math.floor(S.bank[k]);
+ if(g < 1) return no();
+ S.bank[k] = 0; S.coins += g;
+ beep(523, .07, "square", .04); setTimeout(function(){ beep(784, .12, "square", .04); }, 80);
+ toast("СОБРАНО\n+" + fmt(g));
+ save(); paintMap(); sync();
+}
+
+/* ---------- автоматизация и пассив ---------- */
+
+/* ---------- события ---------- */
+
+var EV_FIRST = 45000, EV_MIN = 60000, EV_MAX = 120000, EV_CATCH = 12000;
+var VEIN_MS = 25000, HYPE_MS = 45000, HYPE_MULT = 1.4, VIP_MS = 15000;
+var VIP = {n:"ВИП", m:3, min:0.40, face:"#6a4a3a", line:"Плачу втрое. Решай сейчас."};
+var EV_NAME = {vein:"ЖИЛА", hype:"АЖИОТАЖ", vip:"ВИП-ПОКУПАТЕЛЬ", dump:"ЧТО-ТО В ОТВАЛЕ"};
+/* Одна реплика на тип события превращала событие в кнопку без содержания.
+   Заголовок берётся случайно при появлении и живёт до конца окна. */
+var EV_LINE = {
+ vein:["ЖИЛА", "МЯГКИЙ ПЛАСТ", "ПЕСОК ОСЫПАЛСЯ", "ПРОМОИНА ПОСЛЕ ДОЖДЯ", "ГРУНТ ПОДДАЛСЯ", "ТРЕЩИНА В ПОРОДЕ"],
+ hype:["АЖИОТАЖ", "СТАТЬЯ В ГАЗЕТЕ", "СЛУХ О БОЛЬШОЙ НАХОДКЕ", "ПРИЕХАЛ АУКЦИОНИСТ", "ГОРОД ГУДИТ", "СЕЗОН ЭКСПЕДИЦИЙ"],
+ vip:["ВИП-ПОКУПАТЕЛЬ", "ЧЕЛОВЕК С ЧЕКОВОЙ КНИЖКОЙ", "АГЕНТ МУЗЕЯ", "КОЛЛЕКЦИОНЕР ИЗ СТОЛИЦЫ", "ГОСТЬ БЕЗ ИМЕНИ", "ПОКУПАТЕЛЬ НА АВТОМОБИЛЕ"],
+ dump:["ЧТО-ТО В ОТВАЛЕ", "БЛЕСНУЛО В ПОРОДЕ", "СОБАКА ЧТО-ТО ВЫРЫЛА", "ОСЫПЬ ОБНАЖИЛА КРАЙ", "ВЫМЫЛО ИЗ СТЕНКИ", "ЛОПАТА ЗВЯКНУЛА О МЕТАЛЛ"]
+};
+var EV_DONE = {
+ vein:["ГРУНТ МЯГКИЙ", "ПЛАСТ КРОШИТСЯ", "ЛОПАТА ИДЁТ КАК ПО МАСЛУ"],
+ hype:["ЦЕНЫ ВЫШЕ", "ПЛАТЯТ НЕ ТОРГУЯСЬ", "ОЧЕРЕДЬ У ПРИЛАВКА"],
+ vip:["ОКНО КОРОТКОЕ", "ЖДАТЬ НЕ БУДЕТ", "ПЛАТИТ ВТРОЕ"],
+ dump:["В ЯЩИК", "ПОДОБРАЛ", "ЦЕЛАЯ, ТОЛЬКО В ГРЯЗИ"]
+};
+function evPickLine(a){ return a[Math.floor(Math.random() * a.length)]; }
+var EV_HINT = {vein:"ГРУНТ МЯГКИЙ", hype:"ЦЕНЫ ВЫШЕ"};
+
+var ev = null, buff = null, evAt = Date.now() + EV_FIRST;
+
+/* События открываются с первым копателем, цели — с первым чистильщиком.
+   Считаем по всем локациям: переезд не должен отнимать уже открытое. */
+function anyHired(a){ return !!(a[0] || a[1] || a[2]); }
+function evOn(){ return anyHired(S.digger); }
+function goalsOn(){ return anyHired(S.cleaner); }
+function veinOn(){ return !!buff && buff.k === "vein"; }
+function hypeOn(){ return !!buff && buff.k === "hype"; }
+function evReset(){ evAt = Date.now() + EV_MIN + Math.random() * (EV_MAX - EV_MIN); }
+
+function evPick(){
+ var c = ["vein", "dump"];
+ if(deals.length) c.push("hype");
+ var f = freeShelf(), ok = 0;
+ for(var i = 0; i < f.length; i++) if(f[i].q >= VIP.min) ok++;
+ if(ok && deals.length < MAX_DEALS) c.push("vip");
+ return c[Math.floor(Math.random() * c.length)];
+}
+function spawnEv(){
+ var ek = evPick();
+ ev = {k:ek, n:evPickLine(EV_LINE[ek]), ends:Date.now() + EV_CATCH};
+ beep(660, .07, "square", .035);
+ paintEv();
+}
+function vipDeal(){
+ var f = freeShelf(), ok = [];
+ for(var i = 0; i < f.length; i++) if(f[i].q >= VIP.min) ok.push(f[i]);
+ if(!ok.length || deals.length >= MAX_DEALS) return false;
+ var it = ok[Math.floor(Math.random() * ok.length)];
+ deals.push({b:VIP, u:it.u, sum:offerFor(it, VIP), ends:Date.now() + VIP_MS, min:false});
+ return true;
+}
+function catchEv(){
+ if(!ev) return;
+ var k = ev.k, kn = ev.n || EV_NAME[k], kd = evPickLine(EV_DONE[k]);
+ ev = null; evReset();
+ S.seen.ev = 1;
+ beep(784, .08, "square", .04);
+ if(k === "vein"){
+  buff = {k:"vein", t:kd, n:kn, ends:Date.now() + VEIN_MS};
+  toast(kn + "\n" + kd + " 25 С");
+ }else if(k === "hype"){
+  buff = {k:"hype", t:kd, n:kn, ends:Date.now() + HYPE_MS};
+  for(var i = 0; i < deals.length; i++) deals[i].sum = Math.round(deals[i].sum * HYPE_MULT);
+  toast(kn + "\n" + kd + " 45 С");
+ }else if(k === "vip"){
+  if(vipDeal()) toast(kn + " У ПРИЛАВКА\nОКНО 15 С");
+  else{ S.coins += Math.round(50 * loc().mult); toast("ВИП НЕ ДОЖДАЛСЯ"); }
+ }else{
+  if(S.crate.length < CRATE_MAX){
+   S.crate.push({loc:S.loc, i:pickIdx(), u:newUid()});
+   toast(kn + "\n" + kd);
+  }else{
+   var bonus = Math.round(40 * loc().mult);
+   S.coins += bonus;
+   toast("ЯЩИК ПОЛОН\n+" + fmt(bonus));
+  }
+ }
+ save();
+ if(screen === "shop") paintShop();
+ paintEv(); sync();
+}
+
+var evEl = document.getElementById("ev"), evT = document.getElementById("evT");
+var evX = document.getElementById("evX"), evI = evEl.querySelector("#evBar > i");
+function paintEv(){
+ var now = Date.now();
+ if(ev){
+  evEl.classList.add("on"); evEl.classList.add("cat");
+  evT.textContent = (ev.n || EV_NAME[ev.k]) + " — ЛОВИ";
+  evX.textContent = Math.max(0, Math.ceil((ev.ends - now) / 1000)) + "С";
+  evI.style.width = Math.max(0, (ev.ends - now) / EV_CATCH * 100) + "%";
+ }else if(buff){
+  var full = buff.k === "vein" ? VEIN_MS : HYPE_MS;
+  evEl.classList.add("on"); evEl.classList.remove("cat");
+  evT.textContent = (buff.n || EV_NAME[buff.k]) + " · " + (buff.t || EV_HINT[buff.k]);
+  evX.textContent = Math.max(0, Math.ceil((buff.ends - now) / 1000)) + "С";
+  evI.style.width = Math.max(0, (buff.ends - now) / full * 100) + "%";
+ }else evEl.classList.remove("on");
+}
+evEl.onclick = function(){ if(ev) catchEv(); };
+
+function evTick(){
+ var now = Date.now();
+ if(ev && now >= ev.ends){ ev = null; evReset(); }
+ if(buff && now >= buff.ends) buff = null;
+ if(!ev && !buff && evOn() && now >= evAt) spawnEv();
+ paintEv();
+}
+
+/* ---------- цели ---------- */
+
+/* Цели открываются вместе с чистильщиком, поэтому в цепочке нет ничего, что к
+   этому моменту уже сделано. Счётчики локации обнуляются в момент открытия
+   (goalStart), иначе первые цели засчитываются заочно, за прошлые заслуги. */
+var GOALS = [
+ {t:"ПРОДАТЬ 3 НАХОДКИ",   f:function(k){ return S.soldLoc[k] >= 3; },  r:0.10},
+ {t:"ОТКОПАТЬ 5 НАХОДОК",  f:function(k){ return S.digLoc[k] >= 5; },   r:0.15},
+ {t:"ОЧИСТИТЬ НА 100%",    f:function(k){ return S.perfect[k] >= 1; },  r:0.20},
+ {t:"ПРОДАТЬ 10 НАХОДОК",  f:function(k){ return S.soldLoc[k] >= 10; }, r:0.30},
+ {t:"НАНЯТЬ МЕНЕДЖЕРА",    f:function(k){ return !!S.manager[k]; },     r:0.35},
+ {t:"ПРОДАТЬ 25 НАХОДОК",  f:function(k){ return S.soldLoc[k] >= 25; }, r:0.50},
+ /* Последняя цель не обрывается на числе продаж, а ведёт к переезду: иначе
+    цепочка кончается там же, где у игрока кончаются причины копать. */
+ {t:function(){ var n = nextLocIdx(); return n < 0 ? "СОБРАТЬ УНИКАЛЬНЫЕ" : "НАКОПИТЬ НА ПЕРЕЕЗД · " + LOC[n].n; },
+  f:function(k){ var n = nextLocIdx(); return n < 0 ? albumTier(k, TIERS - 1) >= TIER_N : S.coins >= LOC[n].open; },
+  r:0.80}
+];
+function goalText(i){ var t = GOALS[i].t; return typeof t === "function" ? t() : t; }
+function goalStart(){
+ var k = S.loc;
+ if(S.goalOpen[k] || !goalsOn()) return;
+ S.goalOpen[k] = 1;
+ S.digLoc[k] = 0; S.soldLoc[k] = 0; S.perfect[k] = 0;
+ save();
+}
+function goalReward(i, k){ return Math.round(LOC[k].digger * GOALS[i].r); }
+function paintGoal(){
+ var el = document.getElementById("goal"), k = S.loc, i = S.goal[k];
+ if(!goalsOn() || i >= GOALS.length){ el.classList.remove("on"); return; }
+ el.classList.add("on");
+ document.getElementById("goalT").textContent = "ЦЕЛЬ · " + goalText(i);
+ document.getElementById("goalR").textContent = "+" + fmt(goalReward(i, k));
+}
+function checkGoal(){
+ goalStart();
+ var k = S.loc, i = S.goal[k];
+ if(i >= GOALS.length || !goalsOn() || !GOALS[i].f(k)) return;
+ var rew = goalReward(i, k);
+ S.goal[k] = i + 1;
+ S.seen.goal = 1;
+ S.coins += rew;
+ toast("ЦЕЛЬ ВЫПОЛНЕНА\n+" + fmt(rew));
+ beep(659, .08, "square", .04);
+ setTimeout(function(){ beep(880, .14, "square", .04); }, 100);
+ save(); sync();
+ if(screen === "map") paintMap();
+}
+
+var digAcc = 0, clnAcc = 0, mgrAcc = 0, crewFlash = {d:0, c:0, m:0}, mgrTired = false;
+setInterval(function(){
+ var L = loc(), changed = S.digger[S.loc] || S.cleaner[S.loc] || S.manager[S.loc];
+ evTick(); checkGoal(); paintGoal();
+
+ if(S.digger[S.loc]){
+  /* Наёмник копает только ту лунку, которую ему назначили, и встаёт, когда она
+     кончилась: иначе автоматизация обходит выбор лунки стороной.
+     Одно место в ящике он всегда оставляет игроку. */
+  var bh = S.botHole >= 0 ? holes()[S.botHole] : null;
+  if(S.pause.d || !bh || S.crate.length >= CRATE_MAX - 1) digAcc = 0;
+  else{
+   digAcc += 0.5;
+   if(digAcc >= 12 * L.hard * layerMat(bh, bh.mats.length - 1).hp){
+    digAcc = 0;
+    S.crate.push({loc:S.loc, i:botIdx(), u:newUid()});
+    S.digLoc[S.loc]++;
+    bh.left--;
+    S.adFinds = (S.adFinds || 0) + (bh.t === "ad" ? 0 : 1);
+    crewFlash.d = Date.now();
+    if(bh.left <= 0) collapseHole(S.botHole);
+    holeSig = "";
+    changed = true;
+   }
+  }
+ }
+ if(S.cleaner[S.loc]){
+  if(S.pause.c || botCrateIdx() < 0 || S.store.length >= STORE_MAX - 1) clnAcc = 0;
+  else{
+   clnAcc += 0.5;
+   if(clnAcc >= 10 * L.hard){
+    clnAcc = 0;
+    var bi = botCrateIdx();
+    var raw = S.crate[bi];
+    if(botSkips(raw)){
+     /* Осмотр занимает тот же такт, что и чистка: вердикт приходит не мгновенно,
+        а по мере того, как наёмник доходит до вещи в очереди. */
+     raw.aside = 1;
+     crewFlash.c = Date.now();
+     toast("НАЁМНИК ОТЛОЖИЛ НАХОДКУ\nГОВОРИТ, НЕ ЕГО РАБОТА");
+     beep(196, .08, "square", .03);
+    }else{
+     S.crate.splice(bi, 1);
+     S.store.push({loc:raw.loc, i:raw.i, q:0.50 + Math.random() * 0.35, u:newUid(), h:0});
+     crewFlash.c = Date.now();
+     if(cItem && crateIdxOf(cItem.u) < 0){ cItem = null; clearClean(); ensureClean(); }
+    }
+    changed = true;
+   }
+  }
+ }
+
+ if(S.manager[S.loc] && !S.pause.m){
+  var mnow = Date.now();
+  if(mnow - S.mgrWin >= MGR_WIN){ S.mgrWin = mnow; S.mgrSold = 0; mgrTired = false; }
+  mgrAcc += 0.5;
+  if(mgrAcc >= 2){
+   mgrAcc = 0;
+   /* Менеджер выставляет только разрешённые ярусы: уникальную вещь
+      он иначе продаст раньше, чем игрок решит оставить её в альбоме. */
+   while(S.shelf.length < SHELF_MAX){
+    var si = mgrStoreIdx();
+    if(si < 0) break;
+    S.shelf.push(S.store.splice(si, 1)[0]);
+    crewFlash.m = Date.now();
+   }
+   if(S.mgrSold < MGR_CAP){
+    for(var q = deals.length - 1; q >= 0; q--){
+     var dl = deals[q];
+     if(S.mgrMode === 1 && dl.b.m < 1) continue;
+     var sit = shelfOf(dl.u);
+     if(!sit || !S.mgrTier[tierOf(sit.i)]) continue;
+     crewFlash.m = Date.now();
+     S.mgrSold++;
+     sellDeal(dl.u);
+     break;
+    }
+   }else if(!mgrTired && deals.length){
+    mgrTired = true;
+    toast("МЕНЕДЖЕР ВЫДОХСЯ\nДО КОНЦА МИНУТЫ ПРОДАЁШЬ САМ");
+    beep(220, .08, "square", .03);
+   }
+  }
+ }
+
+ for(var r = 0; r < LOC.length; r++){
+  if(S.left[r] && r !== S.loc){
+   S.bank[r] = Math.min(bankCap(r), S.bank[r] + passiveOf(r) / 120);
+   changed = true;
+  }
+ }
+
+ if(changed || S.tut < TUT.length){
+  if(screen === "shop") shopSync();
+  if(screen === "map") mapSync();
+  sync();
+ }
+}, 500);
+
+setInterval(function(){
+ var now = Date.now(), gone = 0;
+ for(var i = deals.length - 1; i >= 0; i--){
+  if(now >= deals[i].ends || !shelfOf(deals[i].u)){ deals.splice(i, 1); gone++; }
+ }
+ if(gone){ toast(gone > 1 ? "ПОКУПАТЕЛИ УСТАЛИ ЖДАТЬ" : "ПОКУПАТЕЛЬ УСТАЛ ЖДАТЬ"); sync(); }
+ if(!S.shelf.length) dealAt = Math.max(dealAt, now + 3000);
+ else if(now >= dealAt) newWave();
+ if(screen === "shop") shopSync();
+}, 700);
+
+function offline(){
+ if(!S.t) return;
+ var dt = Math.min(4 * 3600, (Date.now() - S.t) / 1000);
+ if(dt < 60) return;
+ var total = 0;
+ for(var r = 0; r < LOC.length; r++){
+  if(!S.left[r] || r === S.loc) continue;
+  var add = Math.min(bankCap(r) - S.bank[r], passiveOf(r) / 60 * dt);
+  if(add > 0){ S.bank[r] += add; total += add; }
+ }
+ if(total > 1) setTimeout(function(){ toast("ЛАВКИ РАБОТАЛИ\n+" + fmt(total) + " НА КАРТЕ"); }, 500);
+}
+
+/* ---------- тутор ---------- */
+
+function nextLocIdx(){ for(var r = 0; r < LOC.length; r++) if(!S.unlocked[r]) return r; return -1; }
+function crewCost(){ return LOC[S.loc].digger; }
+
+var TUT = [
+ /* Тутор жёстко сценарный: до его конца случайные покупатели не приходят вообще,
+    а первая находка всегда скарабей. Пятнадцать шагов ведут игрока через весь цикл
+    дважды — второй раз уже с выбором лунки. */
+ {t:"Держи лопату. Веди пальцем по грунту — снимается слой за слоем.", h:"Свайп по раскопу",
+  tgt:"digPit", hard:1, hand:1, c:function(){ return dTouched >= 40; }},
+ {t:"Верхний слой уйдёт — под ним другая порода. Её тоже надо снять.", h:"Копай, пока участок не осыплется",
+  tgt:"digPit", hard:1, hand:1, fade:1, c:function(){ return dReady; }},
+ {t:"Участок разобран. Забери находку в ящик.", h:"Жми кнопку",
+  tgt:"digCta", hard:1, allow:["digCta"], c:function(){ return S.crate.length >= 1; }},
+ {t:"Из земли всё выходит в корке. Иди чистить.", h:"Вкладка ЧИСТКА",
+  tgt:"navClean", hard:1, c:function(){ return screen === "clean"; }},
+ {t:"Щётка снимает корку. Оранжевое — хрупкие места: там веди медленно, иначе скол.", h:"Нужно 100%",
+  tgt:"clnPit", hard:1, hand:1, fade:1, c:function(){ return !!cItem && cDone >= cTotal; }},
+ {t:"Корка снята, вещь опознана. Отправь её на склад.", h:"Жми кнопку",
+  tgt:"clnCta", hard:1, allow:["clnCta"], c:function(){ return S.store.length >= 1; }},
+ {t:"Товар на складе. Иди в лавку.", h:"Вкладка ЛАВКА",
+  tgt:"navShop", hard:1, c:function(){ return screen === "shop"; }},
+ {t:"Жми по находке — она встанет на прилавок. Покупатель придёт не сразу.", h:"Три места на прилавке",
+  tgt:"store", hard:1, allow:["store"], c:function(){ return S.shelf.length >= 1; }},
+ {t:"Пока он идёт, копай дальше. Возвращайся на раскоп.", h:"Вкладка РАСКОП",
+  tgt:"navDig", hard:1, c:function(){ return screen === "dig"; }},
+ {t:"Эта яма не бесконечная. Где копать дальше — выбираешь ты. Жми ЛУНКИ.", h:"Кнопка над полосой",
+  tgt:"holeBtn", hard:1, allow:["holeBtn"], c:function(){ return pickOpen; }},
+ {t:"Вот участки. Мягкие разбираются быстро, но там обычное. Тяжёлые дольше и просят лопату получше — зато редкое лежит в них. Выбирай и копай.", h:"Кнопка КОПАТЬ",
+  tgt:"holePick", hard:1, allow:["holePick"], c:function(){ return !pickOpen; }},
+ {t:"Копай вторую вещь и забирай в ящик.", h:"Свайп, потом кнопка",
+  tgt:"digPit", hard:0, c:function(){ return S.digLoc[S.loc] >= 2; }},
+ {t:"Отправь её на чистку.", h:"Вкладка ЧИСТКА",
+  tgt:"navClean", hard:0, c:function(){ return screen === "clean" && !!cItem; }},
+ {t:"Пока ты чистишь, к витрине подошёл покупатель на первую вещь. Он дождётся, но деньги нужны сейчас.", h:"Вкладка ЛАВКА",
+  tgt:"navShop", hard:0,
+  wait:function(){ return deals.length > 0; },
+  c:function(){ return screen === "shop"; }},
+ {t:"Это музей. Он берёт и неидеальное, просто платит меньше: чем чище вещь, тем выше цена. Продавай.", h:"Кнопка ПРОДАТЬ",
+  tgt:"deals", hard:1,
+  wait:function(){ return deals.length > 0; },
+  c:function(){ return S.sold >= 1; }},
+ {t:"На вырученное хватает на лопату. Открой карту.", h:"Вкладка КАРТА",
+  tgt:"navMap", hard:1, c:function(){ return screen === "map"; }},
+ {t:"Внизу карты — инструмент. Прокачай лопату: она быстрее снимает грунт и открывает тяжёлые лунки, где лежит редкое.", h:"Кнопка с ценой",
+  tgt:"up_dig", hard:1, allow:["up_dig"], c:function(){ return upLv("dig") >= 1; }},
+ {t:"Дальше играй как играл: копай, чисти, продавай. Покупатели теперь приходят сами.", h:"Жми по этой рамке, чтобы продолжить",
+  tgt:"", hard:0, mark:"free", c:function(){ return false; }},
+ {t:"Хватает на копателя. Он будет копать сам, пока ты чистишь.", h:"Вкладка КАРТА",
+  tgt:"navMap", hard:0,
+  wait:function(){ return S.digger[S.loc] || S.coins >= crewCost(); },
+  c:function(){ return screen === "map"; }},
+ {t:"Нанимай. Дальше ящик наполняется без тебя.", h:"Кнопка КОПАТЕЛЬ",
+  tgt:"hireDig", hard:0,
+  wait:function(){ return S.digger[S.loc] || S.coins >= crewCost(); },
+  c:function(){ return !!S.digger[S.loc]; }},
+ {t:"Иногда всплывает зелёная плашка. Лови её тапом — это короткая выгода: мягкий грунт, ажиотаж в лавке или богатый покупатель.", h:"Тапни плашку",
+  tgt:"ev", hard:0,
+  wait:function(){ return !!ev; },
+  c:function(){ return !!S.seen.ev || !!S.cleaner[S.loc]; }},
+ {t:"Теперь хватает на чистильщика. Он снимет с тебя вторую фазу.", h:"Вкладка КАРТА",
+  tgt:"navMap", hard:0,
+  wait:function(){ return S.cleaner[S.loc] || S.coins >= LOC[S.loc].cleaner; },
+  c:function(){ return screen === "map"; }},
+ {t:"Нанимай. Чистит он хуже тебя — от 50 до 85%, — зато без остановки.", h:"Кнопка ЧИСТИЛЬЩИК",
+  tgt:"hireCln", hard:0,
+  wait:function(){ return S.cleaner[S.loc] || S.coins >= LOC[S.loc].cleaner; },
+  c:function(){ return !!S.cleaner[S.loc]; }},
+ /* Шаг закрывается тапом по реплике: первая цель часто выполняется сразу
+    (находки уже откопаны), и по факту выполнения шаг бы просто не показался. */
+ {t:"Теперь рутину тянут они. Но редкие вещи находит только твоя рука: наёмник выгребает грунт и приносит рядовое, остальное лежит глубже.", h:"Жми по этой рамке, чтобы продолжить",
+  tgt:"", hard:0, c:function(){ return false; }},
+ {t:"Собранная четвёрка одного яруса поднимает цену на несколько продаж, а потом сгорает вместе с вещами. Сейчас внизу откроется альбом — там видно, чего не хватает.", h:"Жми по этой рамке, чтобы продолжить",
+  tgt:"", hard:0, mark:"album", c:function(){ return false; }},
+ {t:"Под монетами появилась цель. Выполняй по очереди — каждая платит и ведёт к следующей покупке.", h:"Жми сюда, чтобы закрыть",
+  tgt:"goal", hard:0,
+  wait:function(){ return goalsOn(); },
+  c:function(){ return S.loc > 0; }},
+ {t:"Лавка работает сама. Пора открывать новое место.", h:"Вкладка КАРТА",
+  tgt:"navMap", hard:0,
+  wait:function(){ var n = nextLocIdx(); return S.loc > 0 || (n >= 0 && canTravel(n)); },
+  c:function(){ return screen === "map"; }},
+ {t:"Едем. Старая лавка останется и будет присылать деньги.", h:"Кнопка ЕХАТЬ",
+  tgt:"travelBtn", hard:0,
+  wait:function(){ var n = nextLocIdx(); return S.loc > 0 || (n >= 0 && canTravel(n)); },
+  c:function(){ return S.loc > 0; }}
+];
+
+/* Шаг, после которого открывается альбом. Ищем по метке, чтобы вставка
+   новых шагов не сдвигала условие. */
+/* Кнопка ЛУНКИ появляется ровно на своём шаге тутора: раньше она обещает выбор,
+   которого игрок ещё не понимает. */
+var HOLE_STEP = (function(){
+ for(var i = 0; i < TUT.length; i++) if(TUT[i].tgt === "holeBtn") return i;
+ return 0;
+})();
+/* После этого шага тутор отпускает игрока: включаются обычные волны покупателей. */
+var FREE_STEP = (function(){
+ for(var i = 0; i < TUT.length; i++) if(TUT[i].mark === "free") return i + 1;
+ return TUT.length;
+})();
+var ALBUM_END = (function(){
+ for(var i = 0; i < TUT.length; i++) if(TUT[i].mark === "album") return i + 1;
+ return TUT.length;
+})();
+
+/* Плашка события лежит поверх нижней части экрана. Реплика профессора
+   не должна под неё попадать — поднимаем её выше плашки. */
+function liftBubble(bub, app){
+ var e = document.getElementById("ev");
+ if(!e.classList.contains("on")) return;
+ var ar = app.getBoundingClientRect(), er = e.getBoundingClientRect();
+ var need = ar.bottom - er.top + 10;
+ if(bub.style.bottom === "auto"){
+  var br = bub.getBoundingClientRect();
+  if(br.bottom <= er.top) return;
+  bub.style.top = "auto";
+  bub.style.bottom = need + "px";
+ }else if(parseFloat(bub.style.bottom) < need) bub.style.bottom = need + "px";
+}
+
+var coach = document.getElementById("coach"), curTut = -1, lastDraw = 0, lifted = [];
+var tutShown = 0, fadeTimer = 0;
+var FADE_MS = 2600;
+function rectIn(el){
+ var a = document.getElementById("app").getBoundingClientRect(), r = el.getBoundingClientRect();
+ return {x:r.left - a.left, y:r.top - a.top, w:r.width, h:r.height};
+}
+function box(el, x, y, w, h){
+ el.style.left = x + "px"; el.style.top = y + "px";
+ el.style.width = w + "px"; el.style.height = h + "px";
+}
+function unlift(){ for(var i = 0; i < lifted.length; i++) lifted[i].classList.remove("cup"); lifted = []; }
+function coachHide(){
+ coach.classList.remove("on"); coach.classList.remove("hard");
+ document.getElementById("cring").style.display = "none";
+ document.getElementById("chand").style.display = "none";
+ document.getElementById("cbub").classList.remove("on");
+ unlift(); curTut = -1;
+}
+/* Цель шага живёт на своём экране. Если игрок на другом, подсказка не исчезает,
+   а переезжает на кнопку нужной вкладки — иначе шаг видно только там, где он и так очевиден. */
+var TGT_SCREEN = {digPit:"dig", digCta:"dig", holeBtn:"dig", holePick:"dig",
+ clnPit:"clean", clnCta:"clean",
+ slots:"shop", store:"shop", deals:"shop",
+ hireDig:"map", hireCln:"map", hireMgr:"map", mgrMode:"map", travelBtn:"map", up_dig:"map"};
+var NAV_NAME = {dig:"РАСКОП", clean:"ЧИСТКА", shop:"ЛАВКА", map:"КАРТА"};
+
+/* Как только игрок начал копать или чистить, реплика уходит: на этих шагах она
+   стоит поверх поля, и работать под ней невозможно. Возвращается со сменой шага. */
+var tutMute = false;
+function muteBubble(){
+ if(tutMute || S.tut >= TUT.length) return;
+ var s0 = TUT[S.tut];
+ if(!s0 || (s0.tgt !== "digPit" && s0.tgt !== "clnPit")) return;
+ tutMute = true;
+ document.getElementById("cbub").classList.remove("on");
+ document.getElementById("chand").style.display = "none";
+}
+/* Реплика не должна закрывать кнопку действия: на раскопе и чистке она всегда
+   поднимается выше CTA, даже если подсказка указывает на всю яму целиком. */
+function bubFloor(app){
+ var id = screen === "dig" ? "digCta" : (screen === "clean" ? "clnCta" : "");
+ var base = 96;
+ if(!id) return base;
+ var el = document.getElementById(id);
+ if(!el || !el.getClientRects().length) return base;
+ return Math.max(base, app.clientHeight - rectIn(el).y + 8);
+}
+function drawCoach(s, idx){
+ /* Шаг без цели: просто реплика. Кольцо на случайной кнопке обещает,
+    что по ней надо нажать, а нажатие ничего не делает. */
+ if(!s.tgt){
+  if(curTut === idx) return;
+  curTut = idx; lastDraw = Date.now(); tutShown = Date.now(); tutMute = false;
+  unlift();
+  coach.classList.add("on");
+  coach.classList.remove("hard");
+  document.getElementById("cring").style.display = "none";
+  document.getElementById("chand").style.display = "none";
+  var b0 = document.getElementById("cbub");
+  b0.style.top = "auto";
+  b0.style.bottom = bubFloor(document.getElementById("app")) + "px";
+  b0.classList.add("on");
+  liftBubble(b0, document.getElementById("app"));
+  document.getElementById("ctxt").textContent = s.t;
+  document.getElementById("chint").textContent = s.h || "";
+  clearTimeout(fadeTimer);
+  return;
+ }
+ var el = document.getElementById(s.tgt), away = "";
+ if(!el || !el.getClientRects().length){
+  var sc = TGT_SCREEN[s.tgt];
+  var nav = sc && sc !== screen ? document.getElementById(NAV[sc]) : null;
+  if(!nav || !nav.getClientRects().length){ coachHide(); return; }
+  el = nav; away = sc;
+ }
+ var key = idx + (away ? "|" + away : "");
+ if(curTut === key && Date.now() - lastDraw < 400) return;
+ /* Цель может лежать ниже сгиба в прокручиваемом списке: без этого кольцо
+    рисуется за экраном, и шаг выглядит сломанным. */
+ if(curTut !== key && el.scrollIntoView){
+  var rv = el.getBoundingClientRect();
+  if(rv.top < 0 || rv.bottom > (window.innerHeight || 0)) el.scrollIntoView({block:"center"});
+ }
+ lastDraw = Date.now();
+ var app = document.getElementById("app");
+ var r = rectIn(el), pad = 6;
+ var x = Math.max(0, r.x - pad), y = Math.max(0, r.y - pad), w = r.w + pad * 2, h = r.h + pad * 2;
+ var AH = app.clientHeight;
+
+ coach.classList.add("on");
+ coach.classList.toggle("hard", !!s.hard);
+ unlift();
+ if(s.hard){
+  var ids = [away ? el.id : s.tgt].concat(s.allow || []);
+  for(var i = 0; i < ids.length; i++){
+   var e2 = document.getElementById(ids[i]);
+   if(e2){ e2.classList.add("cup"); lifted.push(e2); }
+  }
+ }
+ var ring = document.getElementById("cring");
+ ring.style.display = "block"; box(ring, x, y, w, h);
+
+ var hand = document.getElementById("chand");
+ if(s.hand){
+  hand.style.display = "block";
+  hand.style.left = (x + w * 0.28) + "px";
+  hand.style.top = (y + h * 0.32) + "px";
+ }else hand.style.display = "none";
+
+ var uTop = y, uBot = y + h;
+ for(var q = 0; q < lifted.length; q++){
+  var ar = rectIn(lifted[q]);
+  uTop = Math.min(uTop, ar.y - pad); uBot = Math.max(uBot, ar.y + ar.h + pad);
+ }
+ var bub = document.getElementById("cbub");
+ var faded = s.fade && curTut === key && Date.now() - tutShown > FADE_MS;
+ bub.classList.toggle("on", !faded && !tutMute);
+ var BH = 160, floor = bubFloor(app), safeBot = AH - floor;
+ /* Ниже safeBot лежит кнопка действия: реплику туда опускать нельзя. */
+ if(uBot + BH < safeBot){ bub.style.top = (uBot + 10) + "px"; bub.style.bottom = "auto"; }
+ else if(uTop > BH){ bub.style.bottom = Math.max(floor, AH - uTop + 10) + "px"; bub.style.top = "auto"; }
+ else{ bub.style.bottom = Math.max(floor, AH - (y + h) + 10) + "px"; bub.style.top = "auto"; }
+ liftBubble(bub, app);
+ if(curTut !== key){
+  curTut = key;
+  tutMute = false;
+  bub.classList.toggle("on", !faded);
+  tutShown = Date.now();
+  document.getElementById("ctxt").textContent = s.t;
+  document.getElementById("chint").textContent = away ? "Вкладка " + NAV_NAME[away] : (s.h || "");
+  clearTimeout(fadeTimer);
+  if(s.fade) fadeTimer = setTimeout(tut, FADE_MS + 60);
+ }
+}
+function tut(){
+ if(S.tut >= TUT.length){ coachHide(); return; }
+ var s = TUT[S.tut];
+ /* Условие проверяем раньше wait: шаг про сделку выполняется в тот же миг,
+    когда покупатель исчезает с прилавка, и на wait тутор застревал навсегда. */
+ if(s.c()){ S.tut++; save(); tut(); return; }
+ if(s.wait && !s.wait()){ coachHide(); return; }
+ syncHoleBtn();
+ drawCoach(s, S.tut);
+}
+document.getElementById("cbub").onclick = function(){
+ var s = TUT[S.tut];
+ if(!s || (s.hard && !s.ack)) return;
+ /* Шаг про альбом ставит свой флаг: открытие вкладки не должно зависеть
+    от того, на каком номере шага стоит счётчик. */
+ if(s.mark === "album" && !S.seen.album){
+  S.seen.album = 1;
+  toast("ОТКРЫТ АЛЬБОМ\nВКЛАДКА ВНИЗУ СПРАВА");
+ }
+ S.tut++; save(); tut();
+ sync();   /* иначе нижняя панель обновится только со следующим тиком */
+};
+
+/* ---------- размеры и синхронизация ---------- */
+
+function sizeCanvas(pit, cvs, setter){
+ var r = pit.getBoundingClientRect();
+ var dpr = Math.min(2, window.devicePixelRatio || 1);
+ var w = Math.max(120, Math.round(r.width)), h = Math.max(120, Math.round(r.height));
+ cvs.forEach(function(c){
+  c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+  c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+ });
+ setter(w, h);
+}
+var dDims = "", cDims = "";
+function dimsOf(el){
+ var r = el.getBoundingClientRect();
+ return Math.round(r.width) + "x" + Math.round(r.height);
+}
+function resizeAll(force){
+ var k1 = dimsOf(dPit);
+ if(k1 !== "0x0" && (force || k1 !== dDims)){
+  dDims = k1;
+  sizeCanvas(dPit, [dcU, dcD, dcF], function(w, h){
+   dW = w; dH = h; dCell = Math.max(10, Math.floor(w / 12));
+   dCols = Math.ceil(w / dCell); dRows = Math.ceil(h / dCell);
+  });
+  if(dSite) layoutDig();
+ }
+ var k2 = dimsOf(cPit);
+ if(k2 !== "0x0" && (force || k2 !== cDims)){
+  cDims = k2;
+  sizeCanvas(cPit, [ccU, ccC, ccF], function(w, h){
+   cW = w; cH = h; cCell = Math.max(10, Math.floor(w / 12));
+   cCols = Math.ceil(w / cCell); cRows = Math.ceil(h / cCell);
+  });
+  if(cItem) layoutClean(); else clearClean();
+ }
+}
+
+var crewOpen = false;
+var crewSig = "";
+function crewLine(name, key, txt){
+ return '<div class="crow" id="cw_' + key + '">' +
+   '<div class="ct"><span>' + name + '</span><span id="cs_' + key + '">' + txt + '</span></div>' +
+   (key === "m" ? "" : '<span class="cwbar"><i id="cb_' + key + '"></i></span>') +
+   '</div>';
+}
+function setCrew(key, txt, pct, flash){
+ var row = document.getElementById("cw_" + key);
+ if(!row) return;
+ row.classList.toggle("hit", !!flash);
+ document.getElementById("cs_" + key).textContent = txt;
+ var bar = document.getElementById("cb_" + key);
+ if(bar && pct !== null) bar.style.width = Math.round(pct * 100) + "%";
+}
+function bindCrew(){
+ var keys = ["d", "c", "m"];
+ var ca = document.getElementById("cAll");
+ if(ca) ca.onclick = function(){
+  S.clnAll = S.clnAll ? 0 : 1;
+  toast(S.clnAll ? "ЧИСТИЛЬЩИК БЕРЁТ ВСЁ\nЦЕННОЕ БОЛЬШЕ НЕ БЕРЕЖЁТСЯ" : "ЧИСТИЛЬЩИК ОТКЛАДЫВАЕТ ЦЕННОЕ");
+  crewSig = "";
+  save(); sync();
+ };
+ for(var i = 0; i < keys.length; i++)(function(k){
+  var b = document.getElementById("cp_" + k);
+  if(b) b.onclick = function(){ S.pause[k] = S.pause[k] ? 0 : 1; save(); sync(); };
+  for(var t = 0; t < TIERS; t++)(function(t){
+   var e = document.getElementById("ct_" + k + t);
+   if(!e) return;
+   e.onclick = function(){ S.mgrTier[t] = S.mgrTier[t] ? 0 : 1; save(); sync(); };
+  })(t);
+ })(keys[i]);
+}
+var holeSig = "", pickOpen = false;
+function matLine(h){
+ var a = [];
+ for(var i = 0; i < h.mats.length; i++) a.push(MAT[h.mats[i]].n);
+ return a.join(" · ");
+}
+function stripsHtml(h){
+ var out = '<div class="hstrip">';
+ for(var i = 0; i < h.mats.length; i++) out += '<i style="background:' + MAT[h.mats[i]].pal[1] + '"></i>';
+ return out + '</div>';
+}
+function holeCardHtml(h, i, lv){
+ var lock = h.req > lv;
+ return '<div class="hcard' + (h.t === "ad" ? " ad" : "") + (lock ? " lock" : "") + '">' +
+  '<div class="hrow">' + stripsHtml(h) +
+   '<div class="hinfo">' +
+    '<div class="hn">' + h.n + '<i class="' + (h.t === "ad" ? "gold" : "") + '">ОСТАЛОСЬ ' + h.left + '</i></div>' +
+    '<div class="hs">' + h.s + '</div>' +
+    '<div class="hl">' + matLine(h) + ' · ПЛАСТ: ' + POOL_N[h.pool] + '</div>' +
+    '<div class="hodds">РЯД <b>' + Math.round(h.odds[0] * 100) + '%</b> · РЕД <b class="gold">' +
+      Math.round(h.odds[1] * 100) + '%</b> · УНИК <b class="gold">' + Math.round(h.odds[2] * 100) + '%</b></div>' +
+    '<div class="hreq' + (lock ? " no" : "") + '">' +
+      (lock ? "НУЖНА ЛОПАТА " + h.req + " УР." : "ЛОПАТА ПОДХОДИТ") + '</div>' +
+   '</div></div>' +
+  '<div class="hbtns">' +
+   '<button class="btn' + (lock ? "" : " can") + '" type="button" id="hd' + i + '"' + (lock ? " disabled" : "") + '>' +
+     (S.hole === i ? "ПРОДОЛЖИТЬ" : "КОПАТЬ") + '</button>' +
+   (S.digger[S.loc] ? '<button class="btn' + (S.botHole === i ? " can" : "") + '" type="button" id="hb' + i + '"' +
+     (lock ? " disabled" : "") + '>' + (S.botHole === i ? "КОПАТЕЛЬ ЗДЕСЬ" : "КОПАТЕЛЮ") + '</button>' : "") +
+  '</div></div>';
+}
+function adCardHtml(){
+ var left = Math.max(0, Math.ceil(((S.adAt || 0) - Date.now()) / 60000));
+ var ok = adReady();
+ return '<div class="hcard ad' + (ok ? "" : " lock") + '">' +
+  '<div class="hrow"><div class="hstrip"><i style="background:#c9a14a"></i>' +
+   '<i style="background:#8a6c44"></i><i style="background:#847b66"></i></div>' +
+   '<div class="hinfo">' +
+    '<div class="hn">ТАЙНИК<i class="gold">ЗА РЕКЛАМУ</i></div>' +
+    '<div class="hs">Шансы лучше всех. Но это шанс, а не обещание: чистить до 100% всё равно руками.</div>' +
+    '<div class="hodds">РЯД <b>30%</b> · РЕД <b class="gold">55%</b> · УНИК <b class="gold">15%</b></div>' +
+    '<div class="hreq' + (ok ? "" : " no") + '">' +
+      (ok ? "ДОСТУПЕН" : "ЧЕРЕЗ " + left + " МИН ИЛИ " + Math.max(0, AD_FINDS - (S.adFinds || 0)) + " НАХОДОК") +
+    '</div>' +
+   '</div></div>' +
+  '<div class="hbtns"><button class="btn' + (ok ? " can" : "") + '" type="button" id="hAd"' +
+    (ok ? "" : " disabled") + '>СМОТРЕТЬ РЕКЛАМУ</button></div></div>';
+}
+function paintHoles(){
+ var box = document.getElementById("holePick"), list = holes(), lv = upLv("dig");
+ var sig = [lv, S.hole, S.botHole, adReady() ? 1 : 0].join("|") +
+   list.map(function(h){ return h ? h.t + h.n + h.left + h.req + h.pool : "-"; }).join(",");
+ if(sig === holeSig) return;
+ holeSig = sig;
+ var html = '<div class="small" style="letter-spacing:1px">ГДЕ КОПАЕМ · ' + loc().n +
+   (S.digger[S.loc] ? '<br>КНОПКА «КОПАТЕЛЮ» СТАВИТ НАЁМНИКА НА ЛУНКУ' : '') + '</div>';
+ if(pickOpen && curHole() && dSite)
+  html += '<button class="btn" type="button" id="hBack" style="height:38px;letter-spacing:1px">' +
+   'НАЗАД К УЧАСТКУ</button>';
+ for(var i = 0; i < 3; i++) if(list[i]) html += holeCardHtml(list[i], i, lv);
+ html += list[3] ? holeCardHtml(list[3], 3, lv) : adCardHtml();
+ box.innerHTML = html;
+ for(var k = 0; k < 4; k++)(function(k){
+  var b = document.getElementById("hd" + k);
+  if(b) b.onclick = function(){ pickHole(k); };
+  var g = document.getElementById("hb" + k);
+  if(g) g.onclick = function(){
+   S.botHole = S.botHole === k ? -1 : k;
+   toast(S.botHole === k ? "КОПАТЕЛЬ КОПАЕТ\n" + holes()[k].n : "КОПАТЕЛЬ СНЯТ С ЛУНКИ");
+   beep(392, .06, "square", .03);
+   holeSig = ""; save(); sync();
+  };
+ })(k);
+ var ad = document.getElementById("hAd");
+ if(ad) ad.onclick = openAdHole;
+ var back = document.getElementById("hBack");
+ if(back) back.onclick = toggleHolePick;
+}
+
+var crateSig = "";
+function paintCrate(){
+ var row = document.getElementById("crateRow");
+ var sig = S.crate.map(function(x){ return x.u + ":" + x.i + ":" + (x.aside ? 1 : 0); }).join(",") +
+   "|" + S.clnPick + "|" + S.clnAll;
+ if(sig === crateSig) return;
+ crateSig = sig;
+ row.innerHTML = "";
+ if(!S.crate.length){
+  var e = document.createElement("div");
+  e.className = "cr"; e.style.width = "auto"; e.textContent = "ЯЩИК ПУСТ";
+  row.appendChild(e); return;
+ }
+ for(var i = 0; i < S.crate.length; i++)(function(it){
+  var a = ART[it.loc][it.i];
+  var b = document.createElement("button");
+  b.type = "button";
+  /* Пока наёмник берёт всё подряд, метка «отложено» врёт: он эту вещь заберёт. */
+  var kept = it.aside && !S.clnAll;
+  b.className = "cr" + (it.u === S.clnPick ? " on" : "") + (kept ? " set" : "");
+  b.innerHTML = svgOf(a, 26, kept ? "#6d8a58" : "#4a3a28") +
+    '<div class="crn">' + (kept ? "ОТЛОЖЕНО" : "В КОРКЕ") + '</div>';
+  b.onclick = function(){ pickClean(it.u); };
+  row.appendChild(b);
+ })(S.crate[i]);
+}
+/* Переключение сбрасывает начатую чистку: находка возвращается в ящик целой,
+   но пройденный путь по ней теряется. */
+function pickClean(u){
+ if(u === S.clnPick && cItem) return;
+ S.clnPick = u;
+ cItem = null; clearClean(); ensureClean();
+ beep(330, .05, "square", .03);
+ save(); sync();
+}
+
+function crewBtns(name, key, tiers){
+ var h = '<button class="btn cpause' + (S.pause[key] ? " off" : "") + '" type="button" id="cp_' + key + '">' +
+   (S.pause[key] ? "ПРОДОЛЖИТЬ" : "ПАУЗА") + '</button>';
+ if(key === "c")
+  return h + '<button class="btn cbtn' + (S.clnAll ? " on" : "") + '" type="button" id="cAll">' +
+   (S.clnAll ? "ЧИСТИТ ВСЁ ПОДРЯД" : "ОТКЛАДЫВАЕТ ЦЕННОЕ") + '</button>';
+ if(!tiers) return h;
+ h += '<div class="cbtns">';
+ for(var t = 0; t < TIERS; t++)
+  h += '<button class="btn cbtn' + (tiers[t] ? " on" : "") + '" type="button" id="ct_' + key + t + '">' +
+    TIER_NAME[t] + '</button>';
+ return h + '</div>';
+}
+
+function paintCrew(){
+ var L = loc(), now = Date.now();
+ var hasD = !!S.digger[S.loc], hasC = !!S.cleaner[S.loc], hasM = !!S.manager[S.loc];
+ var any = hasD || hasC || hasM;
+ var btn = document.getElementById("crewBtn");
+ btn.classList.toggle("on", any);
+ btn.classList.toggle("alert", any && (now - crewFlash.d < 900 || now - crewFlash.c < 900 || now - crewFlash.m < 900));
+ if(!any) crewOpen = false;
+
+ var panel = document.getElementById("crewPanel");
+ panel.classList.toggle("on", crewOpen);
+ if(!crewOpen) return;
+
+ var fd = now - crewFlash.d < 900, fc = now - crewFlash.c < 900, fm = now - crewFlash.m < 900;
+ var dTxt = fd ? "+1 В ЯЩИК" : (S.pause.d ? "НА ПАУЗЕ" :
+   (S.botHole < 0 || !holes()[S.botHole] ? "ЛУНКА НЕ НАЗНАЧЕНА" :
+   (S.crate.length >= CRATE_MAX - 1 ? "МЕСТО ОСТАВЛЕНО ТЕБЕ" : "КОПАЕТ " + holes()[S.botHole].n)));
+ var cTxt = fc ? "+1 НА СКЛАД" : (S.pause.c ? "НА ПАУЗЕ" :
+   (S.store.length >= STORE_MAX - 1 ? "МЕСТО ОСТАВЛЕНО ТЕБЕ" :
+   (botCrateIdx() >= 0 ? "ЧИСТИТ" : (S.crate.length ? "ЦЕННОЕ ОТЛОЖЕНО ТЕБЕ" : "ЖДЁТ НАХОДКУ"))));
+ var mLeft = Math.max(0, MGR_CAP - S.mgrSold);
+ var mTxt = fm ? "ПРОДАЛ" : (S.pause.m ? "НА ПАУЗЕ" :
+   (mLeft <= 0 ? "ЛИМИТ · ДАЛЬШЕ САМ" :
+   (mgrStoreIdx() >= 0 || S.shelf.length ? "ЕЩЁ " + mLeft + " СДЕЛОК ЗА МИНУТУ" : "НЕЧЕГО ВЫСТАВИТЬ")));
+
+ /* Панель перестраиваем только когда меняется её состав: иначе кнопки
+    пересоздаются под пальцем и тап не доходит. */
+ var sig = [hasD, hasC, hasM, S.pause.d, S.pause.c, S.pause.m,
+            S.clnAll, S.mgrTier.join("")].join("|");
+ if(sig !== crewSig){
+  crewSig = sig;
+  var html = "";
+  if(hasD) html += crewLine("КОПАТЕЛЬ", "d", dTxt) + crewBtns("КОПАТЕЛЬ", "d", null);
+  if(hasC) html += crewLine("ЧИСТИЛЬЩИК", "c", cTxt) + crewBtns("ЧИСТИЛЬЩИК", "c", null);
+  if(hasM) html += crewLine("МЕНЕДЖЕР", "m", mTxt) + crewBtns("МЕНЕДЖЕР", "m", S.mgrTier);
+  panel.innerHTML = html;
+  bindCrew();
+ }
+ setCrew("d", dTxt, Math.min(1, digAcc / (12 * L.hard)), fd);
+ setCrew("c", cTxt, Math.min(1, clnAcc / (10 * L.hard)), fc);
+ setCrew("m", mTxt, null, fm);
+ return;
+ if(hasM){
+  var mb = document.createElement("button");
+  mb.className = "btn can"; mb.type = "button";
+  mb.textContent = S.mgrMode ? "ЖДЁТ ЛУЧШИХ" : "ПРОДАЁТ СРАЗУ";
+  mb.onclick = function(){
+   S.mgrMode = S.mgrMode ? 0 : 1;
+   beep(440, .06, "square", .03);
+   save(); sync(); if(screen === "map") paintMap();
+  };
+  panel.appendChild(mb);
+ }
+}
+document.getElementById("crewBtn").onclick = function(e){
+ e.stopPropagation();
+ crewOpen = !crewOpen;
+ beep(330, .05, "square", .025);
+ sync();
+};
+document.addEventListener("pointerdown", function(e){
+ if(!crewOpen) return;
+ var p = document.getElementById("crewPanel"), b = document.getElementById("crewBtn");
+ if(p.contains(e.target) || b.contains(e.target)) return;
+ crewOpen = false; sync();
+}, true);
+
+/* Пока идёт тутор, выбор лунки не показываем: коуч указывает на яму, и список
+   карточек в этот момент только сбивает. Берём первую доступную. */
+function ensureHole(){
+ if(S.hole >= 0 && curHole()){ if(!dSite) newSite(); return; }
+ if(S.tut >= TUT.length) return;
+ var l = holes(), lv = upLv("dig");
+ for(var i = 0; i < 3; i++) if(l[i] && l[i].req <= lv){ S.hole = i; newSite(); return; }
+}
+/* Видимость кнопки ЛУНКИ считается отдельно: sync() обновляет её раньше, чем tut()
+   успевает перевести шаг, и коуч не находил ещё скрытую кнопку. Теперь tut() зовёт
+   эту же функцию прямо перед отрисовкой подсказки. */
+function syncHoleBtn(){
+ var picking = pickOpen || !curHole() || !dSite;
+ document.getElementById("holeBtn").style.display = (picking || S.tut < HOLE_STEP) ? "none" : "";
+}
+function hNowMeta(){
+ var h = curHole();
+ return h ? h.n + " · " + layerMat(h, dLayer).n : loc().n + " · ВЫБОР ЛУНКИ";
+}
+function sync(){
+ tutDealCheck();
+ document.getElementById("coins").textContent = fmt(S.coins);
+ var pas = 0;
+ for(var r = 0; r < LOC.length; r++) if(S.left[r] && r !== S.loc) pas += passiveOf(r);
+ document.getElementById("rate").textContent = pas > 0 ? "+" + fmt(pas) + "/МИН" : "";
+
+ var L = loc();
+ var metaL = document.getElementById("metaL"), metaR = document.getElementById("metaR");
+ if(screen === "dig"){
+  metaL.textContent = hNowMeta();
+  metaR.textContent = "ЯЩИК " + S.crate.length + "/" + CRATE_MAX;
+ }else if(screen === "clean"){
+  metaL.textContent = cItem ? (cLit ? cItem.art.n : "НАХОДКА В КОРКЕ") : "ЯЩИК ПУСТ";
+  metaR.textContent = cItem ? "КАЧЕСТВО " + Math.round(cQual * 100) + "%" : "";
+  metaR.style.color = cItem ? qualColor(cQual) : "var(--ink-dim)";
+ }else if(screen === "shop"){
+  metaL.textContent = "ЛАВКА · " + L.n;
+  metaR.textContent = "ВИТРИНА " + S.shelf.length + "/" + SHELF_MAX;
+ }else if(screen === "album"){
+  metaL.textContent = "АЛЬБОМ · " + L.n;
+  metaR.textContent = "СОБРАНО " + albumCount(S.loc) + "/" + ART[S.loc].length;
+ }else{
+  metaL.textContent = "ЭКСПЕДИЦИИ";
+  metaR.textContent = "ПРОДАНО " + S.sold;
+ }
+ if(screen !== "clean") metaR.style.color = "var(--hud)";
+
+ if(S.tut < TUT.length && (!curHole() || !dSite)) ensureHole();
+ var picking = pickOpen || !curHole() || !dSite;
+ document.getElementById("scDig").classList.toggle("pick", picking);
+ if(screen === "dig" && picking) paintHoles();
+
+ var dp = Math.min(1, dReady ? 1 : dDone / dTotal);
+ document.getElementById("digBar").style.width = (dp * 100) + "%";
+ document.getElementById("digPct").textContent = Math.round(dp * 100) + "%";
+ var hNow = curHole();
+ syncHoleBtn();
+ document.getElementById("digName").textContent = S.crate.length >= CRATE_MAX ? "ЯЩИК ПОЛОН" :
+  (hNow ? "СЛОЙ " + Math.min(dLayer + 1, hNow.mats.length) + " ИЗ " + hNow.mats.length + " · " + dMat.n : "УЧАСТОК");
+ document.getElementById("digTag").textContent = S.crate.length >= CRATE_MAX ?
+  "ЯЩИК ПОЛОН — ИДИ НА ЧИСТКУ" : (dTouched ? "КОПАЕМ" : "УЧАСТОК НЕ ТРОНУТ");
+ var dcta = document.getElementById("digCta");
+ if(S.crate.length >= CRATE_MAX){ dcta.disabled = true; dcta.textContent = "ЯЩИК ПОЛОН"; dcta.classList.remove("can"); }
+ else if(dReady){ dcta.disabled = false; dcta.textContent = "ЗАБРАТЬ В ЯЩИК"; dcta.classList.add("can"); }
+ else{ dcta.disabled = true; dcta.textContent = "СЛОЙ " + Math.round(dp * 100) + "%"; dcta.classList.remove("can"); }
+
+ var cp = cItem ? Math.min(1, cDone / cTotal) : 0;
+ document.getElementById("clnBar").style.width = (cp * 100) + "%";
+ document.getElementById("clnPct").textContent = Math.round(cp * 100) + "%";
+ document.getElementById("clnName").textContent = cItem ? "КОРКА" : "НЕЧЕГО ЧИСТИТЬ";
+ document.getElementById("clnHold").classList.toggle("on", screen === "clean" && !!S.cleaner[S.loc] && !!S.pause.c);
+ document.getElementById("digHold").classList.toggle("on", screen === "dig" && !!S.digger[S.loc] && !!S.pause.d);
+ if(screen === "clean") paintCrate();
+ var ccta = document.getElementById("clnCta");
+ if(!cItem){ ccta.disabled = true; ccta.textContent = "ЯЩИК ПУСТ"; ccta.classList.remove("can"); }
+ else if(S.store.length >= STORE_MAX){ ccta.disabled = true; ccta.textContent = "СКЛАД ПОЛОН"; ccta.classList.remove("can"); }
+ else if(cp >= 1){ ccta.disabled = false; ccta.textContent = "НА СКЛАД"; ccta.classList.add("can"); }
+ else{ ccta.disabled = true; ccta.textContent = "КОРКА " + Math.round(cp * 100) + "%"; ccta.classList.remove("can"); }
+
+ document.getElementById("navClean").textContent = "ЧИСТКА" + (S.crate.length ? " " + S.crate.length : "");
+ var ns = document.getElementById("navShop");
+ ns.textContent = "ЛАВКА" + (deals.length ? " • " + deals.length : (S.shelf.length ? " " + S.shelf.length : ""));
+ ns.classList.toggle("alert", deals.length > 0 && screen !== "shop");
+
+ /* Вкладка альбома появляется вместе с первым экспонатом и мигает, пока в неё не зашли. */
+ document.getElementById("nav").classList.toggle("five", albumOn());
+ document.getElementById("navAlbum").classList.toggle("alert", albumOn() && !S.seen.albumOpen);
+
+ paintCrew();
+
+ tut();
+ paintGoal();
+}
+
+/* ЧИТ ДЛЯ ТЕСТА: тап по монетам даёт +1000. Убрать перед продом. */
+document.getElementById("coinBox").onclick = function(){
+ S.coins += 1000;
+ beep(880, .05, "square", .03);
+ toast("ЧИТ +1000");
+ save(); sync();
+ if(screen === "map") paintMap();
+ if(screen === "shop") paintShop();
+};
+
+document.getElementById("sound").onclick = function(){
+ S.sound = !S.sound;
+ document.getElementById("wave").style.opacity = S.sound ? "1" : "0.15";
+ if(S.sound) beep(520, .06, "square", .03);
+ save();
+};
+
+/* Просмотрщик артефактов в мобильном приложении отдаёт фрейму высоту почти во весь
+   экран, но нижнюю часть накрывает своя шапка: кнопка действия и навигация уезжают
+   под обрез. Измерить это изнутри нельзя — visualViewport возвращает ту же завышенную
+   высоту. Отличаем случай по косвенному признаку: мы во фрейме и фрейм занимает почти
+   весь экран устройства. В обычном браузере фрейм заметно ниже экрана (адресная строка,
+   шапка страницы), там запас не берём и игра занимает всё место. */
+var CLIP_PAD = 96;
+function clipPad(h){
+ if(!document.documentElement.classList.contains("embed")) return 0;
+ var sh = (window.screen && window.screen.height) || 0;
+ if(!sh) return 0;
+ return h >= sh * 0.9 ? CLIP_PAD : 0;
+}
+function fit(){
+ var vv = window.visualViewport;
+ var h = (vv && vv.height) || window.innerHeight || document.documentElement.clientHeight;
+ if(!h) return;
+ h = Math.round(h) - clipPad(h);
+ if(h < 360) h = 360;
+ document.body.style.height = h + "px";
+ document.getElementById("app").style.height = h + "px";
+}
+function refit(){ fit(); resizeAll(); sync(); }
+window.addEventListener("resize", refit);
+window.addEventListener("orientationchange", function(){ setTimeout(refit, 150); });
+if(window.visualViewport){
+ window.visualViewport.addEventListener("resize", refit);
+ window.visualViewport.addEventListener("scroll", fit);
+}
+fit();
+if(window.ResizeObserver) new ResizeObserver(function(){ resizeAll(); sync(); }).observe(document.getElementById("app"));
+setTimeout(refit, 60); setTimeout(refit, 400);
+
+if(S.loc > 0 && S.tut < TUT.length) S.tut = TUT.length;
+if(S.tut >= ALBUM_END) S.seen.album = 1;
+initHoles();
+resizeAll();
+ensureHole();
+ensureClean();
+offline();
+document.getElementById("wave").style.opacity = S.sound ? "1" : "0.15";
+setInterval(save, 5000);
+show("dig");
+})();
+</script>
+</body>
+</html>
