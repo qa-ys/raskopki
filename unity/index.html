@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#120f0b">
-<link rel="icon" href="data:,">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Раскопки</title>
 <style>
   /* Full screen on phones; a centred portrait window (9:16) on wider screens. */
@@ -13,17 +14,23 @@
   #unity-canvas { display: block; background: #120f0b; touch-action: none; outline: none;
     width: min(100vw, calc(100dvh * 9 / 16)); height: min(100dvh, calc(100vw * 16 / 9)); }
   @media (max-aspect-ratio: 10/16) { #unity-canvas { width: 100vw; height: 100dvh; } }
-  #load { position: fixed; inset: 0; display: grid; place-content: center; gap: 18px; text-align: center;
-    font: 700 14px/1.4 system-ui, -apple-system, sans-serif; color: #d9c7a3; background: #120f0b; }
-  #load b { font-size: 28px; letter-spacing: .12em; color: #f2dfb6; }
-  #bar { width: 220px; height: 10px; border: 2px solid #5a4a33; background: #1d1810; }
-  #fill { display: block; height: 100%; width: 0; background: #c9a35a; transition: width .2s; }
+  /* The loader is the splash: the same picture Unity's own splash shows next, so the hand-over
+     doesn't jump. It's sized like the canvas (cover inside the 9:16 window). */
+  #load { position: fixed; inset: 0; display: grid; place-items: center; background: #0d0b09;
+    font: 700 14px/1.4 system-ui, -apple-system, sans-serif; color: #d9c7a3; text-align: center; }
+  #splash { position: relative; width: min(100vw, calc(100dvh * 9 / 16)); height: min(100dvh, calc(100vw * 16 / 9));
+    background: #0d0b09 url(splash.png) center / cover no-repeat; image-rendering: pixelated; }
+  @media (max-aspect-ratio: 10/16) { #splash { width: 100vw; height: 100dvh; } }
+  #foot { position: absolute; left: 0; right: 0; bottom: 6%; display: grid; justify-items: center; gap: 10px; }
+  #bar { width: 220px; height: 10px; border: 2px solid #2b2118; background: #1d1810; }
+  #fill { display: block; height: 100%; width: 0; background: #e8c169; transition: width .2s; }
+  #msg, #err { text-shadow: 0 2px 0 #1d1810; }
   #err { color: #ff8a7a; max-width: 300px; }
 </style>
 </head>
 <body>
 <div id="wrap"><canvas id="unity-canvas" tabindex="-1"></canvas></div>
-<div id="load"><b>РАСКОПКИ</b><div id="bar"><i id="fill"></i></div><span id="msg">Загрузка…</span></div>
+<div id="load"><div id="splash"><div id="foot"><div id="bar"><i id="fill"></i></div><span id="msg">Загрузка…</span></div></div></div>
 <script>
   const s = document.createElement("script");
   s.src = "Build/WebGL.loader.js";
